@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync"
 
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh/agent"
@@ -12,7 +13,8 @@ import (
 var _ agent.ExtendedAgent = &SSHAgent{}
 
 type SSHAgent struct {
-	yk *yubikey.Yubikey
+	yk   *yubikey.Yubikey
+	lock sync.Mutex
 }
 
 func New(serial uint32) (*SSHAgent, error) {

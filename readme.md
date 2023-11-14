@@ -11,8 +11,8 @@ These are the devices that are currently tested and supported:
 
 ## Generated Keys
 
-* 1st slot: RSA 2048 - named `rsa`. Touch policy is set to `never`. (slot 0x95)
-* 2nd slot: ECC P-256 - named `insecure`. Touch policy is set to `never`. (slot 0x94)
+* 1st slot: RSA 2048 - named `insecure-rsa`. Touch policy is set to `never`. (slot 0x95)
+* 2nd slot: ECC P-256 - named `insecure-ecdsa`. Touch policy is set to `never`. (slot 0x94)
 
 ## Installation
 

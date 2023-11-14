@@ -27,6 +27,10 @@ var setupCmd = &cli.Command{
 			Name:  "serial",
 			Usage: "YubiKey serial number",
 		},
+		&cli.StringFlag{
+			Name:  "username",
+			Value: "oneauth",
+		},
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
@@ -77,8 +81,10 @@ var setupCmd = &cli.Command{
 			return err
 		}
 
+		username := c.String("username")
+
 		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
-			CommonName: certgen.GenCommonName("rsa"),
+			CommonName: certgen.GenCommonName(username, "insecure-rsa"),
 			Key: piv.Key{
 				Algorithm:   piv.AlgorithmRSA2048,
 				PINPolicy:   piv.PINPolicyNever,
@@ -87,7 +93,7 @@ var setupCmd = &cli.Command{
 		})
 
 		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
-			CommonName: certgen.GenCommonName("insecure"),
+			CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
 			Key: piv.Key{
 				Algorithm:   piv.AlgorithmEC256,
 				PINPolicy:   piv.PINPolicyNever,

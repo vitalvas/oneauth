@@ -27,14 +27,6 @@ func (a *SSHAgent) RemoveAll() error {
 	return a.Close()
 }
 
-func (a *SSHAgent) Sign(_ ssh.PublicKey, _ []byte) (*ssh.Signature, error) {
-	return nil, fmt.Errorf("Sign: %w", ErrOperationUnsupported)
-}
-
-func (a *SSHAgent) SignWithFlags(_ ssh.PublicKey, _ []byte, _ agent.SignatureFlags) (*ssh.Signature, error) {
-	return nil, fmt.Errorf("SignWithFlags: %w", ErrOperationUnsupported)
-}
-
 func (a *SSHAgent) Signers() ([]ssh.Signer, error) {
 	return nil, fmt.Errorf("Signers: %w", ErrOperationUnsupported)
 }

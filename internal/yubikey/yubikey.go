@@ -1,6 +1,7 @@
 package yubikey
 
 import (
+	"crypto"
 	"errors"
 	"fmt"
 	"log"
@@ -9,7 +10,8 @@ import (
 )
 
 type Yubikey struct {
-	yk *piv.YubiKey
+	yk     *piv.YubiKey
+	Serial uint32
 }
 
 func OpenBySerial(serial uint32) (*Yubikey, error) {
@@ -55,9 +57,13 @@ func Open(card Card) (*Yubikey, error) {
 			yk.Close()
 			return nil, fmt.Errorf("serial number mismatch %d, got %d", card.Serial, serial)
 		}
+
 	}
 
-	return &Yubikey{yk: yk}, nil
+	return &Yubikey{
+		yk:     yk,
+		Serial: card.Serial,
+	}, nil
 }
 
 func (y *Yubikey) Close() error {
@@ -145,4 +151,8 @@ func (y *Yubikey) getManagementKey(pin string) ([24]byte, error) {
 	}
 
 	return *meta.ManagementKey, nil
+}
+
+func (y *Yubikey) PrivateKey(slot piv.Slot, public crypto.PublicKey, auth piv.KeyAuth) (crypto.PrivateKey, error) {
+	return y.yk.PrivateKey(slot, public, auth)
 }

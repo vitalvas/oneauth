@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -54,6 +56,10 @@ var agentCmd = &cli.Command{
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
+				if errors.Is(err, net.ErrClosed) || errors.Is(err, io.ErrClosedPipe) {
+					return nil
+				}
+
 				if err, ok := err.(sshagent.Temporary); ok && err.Temporary() {
 					log.Printf("temporary accept error: %v", err)
 					time.Sleep(time.Second)
