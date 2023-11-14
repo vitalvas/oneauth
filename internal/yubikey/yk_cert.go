@@ -19,13 +19,14 @@ func (y *Yubikey) GetCertPublicKey(slot piv.Slot) (crypto.PublicKey, error) {
 
 	switch cert.PublicKey.(type) {
 	case *rsa.PublicKey:
+		return cert.PublicKey, nil
+
 	case *ecdsa.PublicKey:
+		return cert.PublicKey, nil
 
 	default:
 		return nil, fmt.Errorf("unexpected public key type: %T", cert.PublicKey)
 	}
-
-	return cert.PublicKey, nil
 }
 
 func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.Certificate, error) {
