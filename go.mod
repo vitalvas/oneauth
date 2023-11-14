@@ -1,6 +1,6 @@
 module github.com/vitalvas/oneauth
 
-go 1.21.0
+go 1.21
 
 require (
 	github.com/go-piv/piv-go v1.11.0
