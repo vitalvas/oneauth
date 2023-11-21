@@ -46,7 +46,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	fp := ssh.FingerprintLegacyMD5(reqKey)
+	fp := ssh.FingerprintSHA256(reqKey)
 
 	keys, err := a.yk.ListKeys(yubikey.AllSlots...)
 	if err != nil {
@@ -54,12 +54,12 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 	}
 
 	for _, key := range keys {
-		sshPublicKey, err := ssh.NewPublicKey(key)
+		sshPublicKey, err := ssh.NewPublicKey(key.PublicKey)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create ssh public key: %w", err)
+			return nil, fmt.Errorf("failed to create ssh public key for sing: %w", err)
 		}
 
-		if fp != ssh.FingerprintLegacyMD5(sshPublicKey) {
+		if fp != ssh.FingerprintSHA256(sshPublicKey) {
 			continue
 		}
 
