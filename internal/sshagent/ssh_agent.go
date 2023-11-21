@@ -74,7 +74,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 	return nil, fmt.Errorf("unknown key %s", fp)
 }
 
-func (a *SSHAgent) sshSign(key yubikey.Cert, data []byte, flags agent.SignatureFlags) (*ssh.Signature, error) {
+func (a *SSHAgent) sshSign(key yubikey.Cert, data []byte, _ agent.SignatureFlags) (*ssh.Signature, error) {
 	if !key.NotBefore.IsZero() && key.NotBefore.After(time.Now()) {
 		return nil, fmt.Errorf("key not yet valid")
 	}
