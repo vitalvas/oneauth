@@ -9,7 +9,7 @@ import (
 )
 
 var yubikeyResetCmd = &cli.Command{
-	Name:  "list",
+	Name:  "reset",
 	Usage: "Reset Yubikey",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
