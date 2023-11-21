@@ -42,7 +42,7 @@ func GenCertificateFor(commonName string, pub crypto.PublicKey) ([]byte, error) 
 
 	parent := &x509.Certificate{
 		Subject: pkix.Name{
-			CommonName: "OneAuth SSH CA - Fake",
+			CommonName: "OneAuth SSH Fake CA",
 		},
 		PublicKey: parentPub,
 	}

@@ -74,6 +74,32 @@ func (y *Yubikey) Close() error {
 	return nil
 }
 
+func (y *Yubikey) ResetToDefault() error {
+	if err := y.yk.Reset(); err != nil {
+		return err
+	}
+
+	if err := y.yk.SetPIN(piv.DefaultPIN, piv.DefaultPIN); err != nil {
+		return err
+	}
+
+	if err := y.yk.SetPUK(piv.DefaultPUK, piv.DefaultPUK); err != nil {
+		return err
+	}
+
+	if err := y.yk.SetManagementKey(piv.DefaultManagementKey, piv.DefaultManagementKey); err != nil {
+		return err
+	}
+
+	if err := y.yk.SetMetadata(piv.DefaultManagementKey, &piv.Metadata{
+		ManagementKey: &piv.DefaultManagementKey,
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (y *Yubikey) Reset(newPIN, newPUK string) error {
 	if err := y.yk.Reset(); err != nil {
 		return err
