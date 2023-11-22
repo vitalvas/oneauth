@@ -26,8 +26,8 @@ jobs:
 
       - uses: actions/checkout@v3
       
-      - name: install deps
-        run: sudo apt install -qy libpcsclite-dev
+      # - name: install deps
+      #   run: sudo apt install -qy libpcsclite-dev
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
