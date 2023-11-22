@@ -3,6 +3,7 @@ package sshagent
 import (
 	"crypto/rand"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-piv/piv-go/piv"
@@ -75,12 +76,15 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 }
 
 func (a *SSHAgent) sshSign(key yubikey.Cert, data []byte, _ agent.SignatureFlags) (*ssh.Signature, error) {
-	if !key.NotBefore.IsZero() && key.NotBefore.After(time.Now()) {
-		return nil, fmt.Errorf("key not yet valid")
-	}
+	_, skip := os.LookupEnv("I_AM_A_REALLY_STUPID_PERSON_WHO_IGNORES_SECURITY_ADVICE")
+	if !skip {
+		if !key.NotBefore.IsZero() && key.NotBefore.After(time.Now()) {
+			return nil, fmt.Errorf("key not yet valid")
+		}
 
-	if !key.NotAfter.IsZero() && key.NotAfter.Before(time.Now()) {
-		return nil, fmt.Errorf("key expired")
+		if !key.NotAfter.IsZero() && key.NotAfter.Before(time.Now()) {
+			return nil, fmt.Errorf("key expired")
+		}
 	}
 
 	// TODO: add input pin code support
