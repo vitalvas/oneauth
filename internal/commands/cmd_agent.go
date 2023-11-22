@@ -1,17 +1,15 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/internal/sshagent"
+	"golang.org/x/sync/errgroup"
 )
 
 var agentCmd = &cli.Command{
@@ -48,28 +46,19 @@ var agentCmd = &cli.Command{
 			return fmt.Errorf("failed to create agent: %w", err)
 		}
 
-		listener, err := net.Listen("unix", socketPath)
-		if err != nil {
-			return fmt.Errorf("failed to listen: %w", err)
-		}
+		group, ctx := errgroup.WithContext(c.Context)
 
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				if errors.Is(err, net.ErrClosed) || errors.Is(err, io.ErrClosedPipe) {
-					return nil
-				}
+		group.Go(func() error {
+			return agent.ListenAndServe(ctx, socketPath)
+		})
 
-				if err, ok := err.(sshagent.Temporary); ok && err.Temporary() {
-					log.Printf("temporary accept error: %v", err)
-					time.Sleep(time.Second)
-					continue
-				}
+		group.Go(func() error {
+			err := xcmd.WaitInterrupted(ctx)
+			log.Println("shutting down agent")
+			agent.Shutdown()
+			return err
+		})
 
-				return fmt.Errorf("failed to accept: %w", err)
-			}
-
-			go agent.HandleConn(conn)
-		}
+		return group.Wait()
 	},
 }
