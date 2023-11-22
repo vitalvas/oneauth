@@ -1,25 +1,11 @@
 # OneAuth
 
-OneAuth is a simple authentication and authorization toolkit for works with Yubikey.
+OneAuth is a simple authentication toolkit for works with Yubikey.
+
+* [Roadmap](docs/roadmap.md)
 
 > **Note:**
 > This project is still in development and not ready for production use.
-
-## Roadmap
-
-* Client
-  * [x] SSH Agent
-  * OS Support
-    * [x] MacOS
-    * [ ] Debian based distributions
-  * Keys
-    * [x] Insecure RSA 2048 (static key)
-    * [x] Insecure ECC P-256 (static key)
-    * [ ] Secure RSA 2048 (certificate based key with CA)
-    * [ ] Secure ECC P-256 (certificate based key with CA)
-* Server
-  * [ ] CA Server
-  * [ ] OTP Validation Server
 
 ## Supported Devices
 
@@ -28,10 +14,12 @@ These are the devices that are currently tested and supported:
 * YubiKey 5 Nano
 * YubiKey 5C Nano
 
+Due to limitations in supporting functionality in the keys themselves, only version 5 is supported.
+
 ## Generated Keys
 
-* 1st slot: RSA 2048 - named `insecure-rsa`. Touch policy is set to `never`. (slot 0x95)
-* 2nd slot: ECC P-256 - named `insecure-ecdsa`. Touch policy is set to `never`. (slot 0x94)
+* RSA 2048 - named `insecure-rsa`. Touch policy is set to `never`. (slot 0x95)
+* ECC P-256 - named `insecure-ecdsa`. Touch policy is set to `never`. (slot 0x94)
 
 ## Installation
 
@@ -41,19 +29,20 @@ These are the devices that are currently tested and supported:
 
 Required no less than 10.14 (Mojave).
 
-#### Debian based distributions
-
-```bash
-apt install libpcsclite-dev
-```
-
 ## Usage
+
+List all available keys:
 
 ```bash
 SSH_AUTH_SOCK=~/.oneauth/ssh-agent.sock ssh-add -L
 ```
 
+SSH client configuration:
+
 ```bash
 Host *
-    IdentityAgent ~/.oneauth/ssh-agent.sock
+  # for authentication with Yubikey
+  IdentityAgent ~/.oneauth/ssh-agent.sock
+  # for forward keys to remote host (usage for bastion or jump host)
+  ForwardAgent ~/.oneauth/ssh-agent.sock
 ```
