@@ -86,28 +86,31 @@ var setupCmd = &cli.Command{
 			return err
 		}
 
-		username := c.String("username")
-		validDays := c.Uint64("valid-days")
+		if validDays := c.Uint64("valid-days"); validDays > 0 {
+			username := c.String("username")
 
-		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
-			CommonName: certgen.GenCommonName(username, "insecure-rsa"),
-			Days:       int(validDays),
-			Key: piv.Key{
-				Algorithm:   piv.AlgorithmRSA2048,
-				PINPolicy:   piv.PINPolicyNever,
-				TouchPolicy: piv.TouchPolicyNever,
-			},
-		})
+			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
+				CommonName: certgen.GenCommonName(username, "insecure-rsa"),
+				Days:       int(validDays),
+				Key: piv.Key{
+					Algorithm:   piv.AlgorithmRSA2048,
+					PINPolicy:   piv.PINPolicyNever,
+					TouchPolicy: piv.TouchPolicyNever,
+				},
+			})
 
-		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
-			CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
-			Days:       int(validDays),
-			Key: piv.Key{
-				Algorithm:   piv.AlgorithmEC256,
-				PINPolicy:   piv.PINPolicyNever,
-				TouchPolicy: piv.TouchPolicyNever,
-			},
-		})
+			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
+				CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
+				Days:       int(validDays),
+				Key: piv.Key{
+					Algorithm:   piv.AlgorithmEC256,
+					PINPolicy:   piv.PINPolicyNever,
+					TouchPolicy: piv.TouchPolicyNever,
+				},
+			})
+		} else {
+			fmt.Println("Skipping insecure keys generation")
+		}
 
 		return nil
 	},
