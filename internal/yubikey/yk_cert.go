@@ -40,11 +40,11 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 		return nil, err
 	}
 
-	return y.setupCertificate(mgmtKey, slot, req.CommonName, pub)
+	return y.setupCertificate(mgmtKey, slot, req.CommonName, pub, req.Days)
 }
 
-func (y *Yubikey) setupCertificate(mgmtKey [24]byte, slot Slot, commonName string, pub crypto.PublicKey) (*x509.Certificate, error) {
-	certBytes, err := certgen.GenCertificateFor(commonName, pub)
+func (y *Yubikey) setupCertificate(mgmtKey [24]byte, slot Slot, commonName string, pub crypto.PublicKey, validDays int) (*x509.Certificate, error) {
+	certBytes, err := certgen.GenCertificateFor(commonName, pub, validDays)
 	if err != nil {
 		return nil, err
 	}

@@ -31,6 +31,11 @@ var setupCmd = &cli.Command{
 			Name:  "username",
 			Value: "oneauth",
 		},
+		&cli.Uint64Flag{
+			Name:  "valid-days",
+			Usage: "Number of days the insecure keys will be valid",
+			Value: 3650,
+		},
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
@@ -82,9 +87,11 @@ var setupCmd = &cli.Command{
 		}
 
 		username := c.String("username")
+		validDays := c.Uint64("valid-days")
 
 		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
 			CommonName: certgen.GenCommonName(username, "insecure-rsa"),
+			Days:       int(validDays),
 			Key: piv.Key{
 				Algorithm:   piv.AlgorithmRSA2048,
 				PINPolicy:   piv.PINPolicyNever,
@@ -94,6 +101,7 @@ var setupCmd = &cli.Command{
 
 		key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
 			CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
+			Days:       int(validDays),
 			Key: piv.Key{
 				Algorithm:   piv.AlgorithmEC256,
 				PINPolicy:   piv.PINPolicyNever,

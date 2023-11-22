@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func GenCertificateFor(commonName string, pub crypto.PublicKey) ([]byte, error) {
+func GenCertificateFor(commonName string, pub crypto.PublicKey, days int) ([]byte, error) {
 	var parentPriv crypto.PrivateKey
 	var parentPub crypto.PublicKey
 
@@ -53,7 +53,7 @@ func GenCertificateFor(commonName string, pub crypto.PublicKey) ([]byte, error) 
 			CommonName: commonName,
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
+		NotAfter:              time.Now().AddDate(0, 0, days),
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 		BasicConstraintsValid: true,

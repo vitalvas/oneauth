@@ -14,4 +14,5 @@ type Cert struct {
 type CertRequest struct {
 	piv.Key
 	CommonName string
+	Days       int
 }
