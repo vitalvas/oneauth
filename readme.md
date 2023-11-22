@@ -7,14 +7,16 @@ OneAuth is a simple authentication and authorization toolkit for works with Yubi
 
 ## Roadmap
 
-* OS Support
-  * [x] MacOS
-  * [ ] Debian based distributions
-* Keys
-  * [x] Insecure RSA 2048 (static key)
-  * [x] Insecure ECC P-256 (static key)
-  * [ ] Secure RSA 2048 (certificate based key with CA)
-  * [ ] Secure ECC P-256 (certificate based key with CA)
+* Client
+  * [x] SSH Agent
+  * OS Support
+    * [x] MacOS
+    * [ ] Debian based distributions
+  * Keys
+    * [x] Insecure RSA 2048 (static key)
+    * [x] Insecure ECC P-256 (static key)
+    * [ ] Secure RSA 2048 (certificate based key with CA)
+    * [ ] Secure ECC P-256 (certificate based key with CA)
 * Server
   * [ ] CA Server
   * [ ] OTP Validation Server
