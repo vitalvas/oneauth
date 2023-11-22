@@ -36,6 +36,11 @@ var setupCmd = &cli.Command{
 			Usage: "Number of days the insecure keys will be valid",
 			Value: 3650,
 		},
+		&cli.Uint64Flag{
+			Name:  "ecc-bits",
+			Usage: "Number of bits for the insecure ECC keys. Supported values are 256 and 384",
+			Value: 256,
+		},
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
@@ -99,11 +104,24 @@ var setupCmd = &cli.Command{
 				},
 			})
 
+			var eccAlgo piv.Algorithm
+
+			switch c.Uint64("ecc-bits") {
+			case 256:
+				eccAlgo = piv.AlgorithmEC256
+
+			case 384:
+				eccAlgo = piv.AlgorithmEC384
+
+			default:
+				return fmt.Errorf("unsupported ECC bits: %d", c.Uint64("ecc-bits"))
+			}
+
 			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
 				CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
 				Days:       int(validDays),
 				Key: piv.Key{
-					Algorithm:   piv.AlgorithmEC256,
+					Algorithm:   eccAlgo,
 					PINPolicy:   piv.PINPolicyNever,
 					TouchPolicy: piv.TouchPolicyNever,
 				},
