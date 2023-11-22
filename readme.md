@@ -2,6 +2,23 @@
 
 OneAuth is a simple authentication and authorization toolkit for works with Yubikey.
 
+> **Note:**
+> This project is still in development and not ready for production use.
+
+## Roadmap
+
+* OS Support
+  * [x] MacOS
+  * [ ] Debian based distributions
+* Keys
+  * [x] Insecure RSA 2048 (static key)
+  * [x] Insecure ECC P-256 (static key)
+  * [ ] Secure RSA 2048 (certificate based key with CA)
+  * [ ] Secure ECC P-256 (certificate based key with CA)
+* Server
+  * [ ] CA Server
+  * [ ] OTP Validation Server
+
 ## Supported Devices
 
 These are the devices that are currently tested and supported:
