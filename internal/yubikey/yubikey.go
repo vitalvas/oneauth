@@ -182,3 +182,24 @@ func (y *Yubikey) getManagementKey(pin string) ([24]byte, error) {
 func (y *Yubikey) PrivateKey(slot piv.Slot, public crypto.PublicKey, auth piv.KeyAuth) (crypto.PrivateKey, error) {
 	return y.yk.PrivateKey(slot, public, auth)
 }
+
+func (y *Yubikey) Retries() (int, error) {
+	return y.yk.Retries()
+}
+
+func (y *Yubikey) VerifyPIN(pin string) error {
+	return y.yk.VerifyPIN(pin)
+}
+
+func (y *Yubikey) SetPIN(currentPIN, newPIN string) error {
+	y.yk.Retries()
+	return y.yk.SetPIN(currentPIN, newPIN)
+}
+
+func (y *Yubikey) SetPUK(currentPUK, newPUK string) error {
+	return y.yk.SetPUK(currentPUK, newPUK)
+}
+
+func (y *Yubikey) Unblock(pukCode, newPIN string) error {
+	return y.yk.Unblock(pukCode, newPIN)
+}

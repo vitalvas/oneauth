@@ -10,5 +10,8 @@ var yubikeyCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		yubikeyListCmd,
 		yubikeyResetCmd,
+		yubikeyChangePinCmd,
+		yubikeyChangePukCmd,
+		yubikeyUnblockPinCmd,
 	},
 }

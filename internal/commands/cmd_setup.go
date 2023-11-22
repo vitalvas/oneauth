@@ -130,6 +130,8 @@ var setupCmd = &cli.Command{
 			fmt.Println("Skipping insecure keys generation")
 		}
 
+		fmt.Println("Done")
+
 		return nil
 	},
 }

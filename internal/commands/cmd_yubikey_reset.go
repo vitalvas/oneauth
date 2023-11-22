@@ -10,7 +10,7 @@ import (
 
 var yubikeyResetCmd = &cli.Command{
 	Name:  "reset",
-	Usage: "Reset Yubikey",
+	Usage: "Reset Yubikey to default settings",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:     "confirm",
@@ -51,6 +51,8 @@ var yubikeyResetCmd = &cli.Command{
 		if err := key.ResetToDefault(); err != nil {
 			return err
 		}
+
+		fmt.Println("Done")
 
 		return nil
 	},

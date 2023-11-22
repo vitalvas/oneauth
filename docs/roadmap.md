@@ -30,9 +30,9 @@
   * [x] Reset PIV applet
   * [ ] Reset OTP applet
   * [ ] Reset FIDO2 applet
-* [ ] Change PIN
-* [ ] Change PUK
-* [ ] Unlock PIN using PUK
+* [x] Change PIN
+* [x] Change PUK
+* [x] Unlock PIN using PUK
 * [ ] Rotate insecure keys
 * [ ] Rotate secure keys
 * [ ] Enable/disable interfaces for USB (OTP, PIV, FIDO2, FIDO U2F, OATH, OpenPGP, ...)
