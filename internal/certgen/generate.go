@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"fmt"
@@ -14,37 +13,19 @@ import (
 )
 
 func GenCertificateFor(commonName string, pub crypto.PublicKey, days int) ([]byte, error) {
-	var parentPriv crypto.PrivateKey
-	var parentPub crypto.PublicKey
-
-	switch pub.(type) {
-	case *rsa.PublicKey:
-		priv, err := rsa.GenerateKey(rand.Reader, 2048)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate private key: %w", err)
-		}
-
-		parentPub = priv.Public()
-		parentPriv = priv
-
-	case *ecdsa.PublicKey:
-		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate private key: %w", err)
-		}
-
-		parentPub = priv.Public()
-		parentPriv = priv
-
-	default:
-		return nil, fmt.Errorf("unsupported public key type: %T", pub)
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 
 	parent := &x509.Certificate{
 		Subject: pkix.Name{
 			CommonName: "OneAuth SSH Fake CA",
+			OrganizationalUnit: []string{
+				"OneAuth",
+			},
 		},
-		PublicKey: parentPub,
+		PublicKey: priv.Public(),
 	}
 
 	csr := &x509.Certificate{
@@ -59,7 +40,7 @@ func GenCertificateFor(commonName string, pub crypto.PublicKey, days int) ([]byt
 		BasicConstraintsValid: true,
 	}
 
-	certBytes, err := x509.CreateCertificate(rand.Reader, csr, parent, pub, parentPriv)
+	certBytes, err := x509.CreateCertificate(rand.Reader, csr, parent, pub, priv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
