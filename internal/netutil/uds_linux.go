@@ -3,6 +3,8 @@ package netutil
 import (
 	"fmt"
 	"net"
+
+	"golang.org/x/sys/unix"
 )
 
 func UnixSocketCreds(conn net.Conn) (UnixCreds, error) {
