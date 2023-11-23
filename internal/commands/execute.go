@@ -18,6 +18,7 @@ func Execute() {
 		Usage: "OneAuth is a CLI tool to use unified authentication and authorization",
 		Commands: []*cli.Command{
 			agentCmd,
+			dataCmd,
 			infoCmd,
 			setupCmd,
 			yubikeyCmd,
