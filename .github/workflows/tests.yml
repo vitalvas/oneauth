@@ -2,8 +2,11 @@ name: tests
 
 on:
   push:
-    branches:
-      - master
+    paths:
+      - '**.go'
+      - '**.sh'
+      - 'go.mod'
+      - 'go.sum'
 
 permissions:
   id-token: write
