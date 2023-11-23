@@ -12,7 +12,7 @@
 ### Agent
 
 * [x] SSH Agent
-* [ ] Check for correct source requester to unix socket (deny access from another user)
+* [x] Check for correct source requester to unix socket (deny access from another user)
 * [ ] RPC Server for cuncurrent access to Yubikey
 
 ### OS Support

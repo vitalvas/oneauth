@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/vitalvas/oneauth/internal/netutil"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -36,6 +37,17 @@ func (a *SSHAgent) Close() error {
 
 func (a *SSHAgent) HandleConn(conn net.Conn) {
 	defer conn.Close()
+
+	creds, err := netutil.UnixSocketCreds(conn)
+	if err != nil {
+		log.Println("failed to get unix socket creds:", err)
+		return
+	}
+
+	if err := checkCreds(&creds); err != nil {
+		log.Println(err)
+		return
+	}
 
 	if err := agent.ServeAgent(a, conn); err != nil && err != io.EOF {
 		log.Println("Agent client connection ended with error:", err)
