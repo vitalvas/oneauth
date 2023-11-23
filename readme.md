@@ -19,8 +19,8 @@ Due to limitations in supporting functionality in the keys themselves, only vers
 
 ## Generated Keys
 
-* RSA 2048 - named `insecure-rsa`. Touch policy is set to `never`. (slot 0x95)
-* ECC P-256 - named `insecure-ecdsa`. Touch policy is set to `never`. (slot 0x94)
+* RSA 2048 - named `insecure-rsa`. (slot 0x95)
+* ECC P-256 - named `insecure-ecdsa`. (slot 0x94)
 
 ## Installation
 
