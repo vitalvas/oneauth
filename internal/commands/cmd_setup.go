@@ -41,6 +41,11 @@ var setupCmd = &cli.Command{
 			Usage: "Number of bits for the insecure ECC keys. Supported values are 256 and 384",
 			Value: 256,
 		},
+		&cli.StringFlag{
+			Name:  "touch-policy",
+			Usage: "Touch policy for the insecure keys. Supported values are cached, always and never",
+			Value: "cached",
+		},
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
@@ -94,13 +99,28 @@ var setupCmd = &cli.Command{
 		if validDays := c.Uint64("valid-days"); validDays > 0 {
 			username := c.String("username")
 
+			var touchPolicy piv.TouchPolicy
+			switch c.String("touch-policy") {
+			case "never":
+				touchPolicy = piv.TouchPolicyNever
+
+			case "cached":
+				touchPolicy = piv.TouchPolicyCached
+
+			case "always":
+				touchPolicy = piv.TouchPolicyAlways
+
+			default:
+				return fmt.Errorf("unsupported touch policy: %s", c.String("touch-policy"))
+			}
+
 			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
 				CommonName: certgen.GenCommonName(username, "insecure-rsa"),
 				Days:       int(validDays),
 				Key: piv.Key{
 					Algorithm:   piv.AlgorithmRSA2048,
 					PINPolicy:   piv.PINPolicyNever,
-					TouchPolicy: piv.TouchPolicyNever,
+					TouchPolicy: touchPolicy,
 				},
 			})
 
@@ -123,7 +143,7 @@ var setupCmd = &cli.Command{
 				Key: piv.Key{
 					Algorithm:   eccAlgo,
 					PINPolicy:   piv.PINPolicyNever,
-					TouchPolicy: piv.TouchPolicyNever,
+					TouchPolicy: touchPolicy,
 				},
 			})
 		} else {

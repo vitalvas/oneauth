@@ -7,7 +7,7 @@
 * [ ] Encryption and decryption of data
 * [ ] Signing and verification of data
 * [ ] Using PIN policy
-* [ ] Using touch policy
+* [x] Using touch policy
 
 ### Agent
 
