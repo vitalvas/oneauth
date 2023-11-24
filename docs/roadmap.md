@@ -22,7 +22,11 @@
   * [ ] Arch: arm64
   * [ ] Using `launchd` for agent
   * [ ] Using keychain for storing PIN and PUK
-* [ ] Debian based distributions
+* [ ] Linux
+  * [ ] Arch: amd64
+  * [ ] Arch: arm64
+  * [ ] Debian based distributions
+* [ ] Windows
 
 ### Yubikey
 
@@ -35,9 +39,9 @@
 * [x] Unlock PIN using PUK
 * [ ] Rotate insecure keys
 * [ ] Rotate secure keys
-* [ ] Enable/disable interfaces for USB (OTP, PIV, FIDO2, FIDO U2F, OATH, OpenPGP, ...)
+* [ ] Enable/disable interfaces for USB/NFC (OTP, PIV, FIDO2, FIDO U2F, OATH, OpenPGP, ...)
 
-### Keys
+### Keys (PIV applet)
 
 * [x] Insecure RSA 2048 (static key)
 * [x] Insecure ECC P-256 (static key)
