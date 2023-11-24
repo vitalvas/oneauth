@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"fmt"
 
 	"github.com/go-piv/piv-go/piv"
@@ -55,7 +56,18 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 		touchPolicy = "-"
 	}
 
-	certBytes, err := certgen.GenCertificateFor(req.CommonName, pub, req.Days, fmt.Sprintf("%d", y.Serial), touchPolicy)
+	extraNames := []pkix.AttributeTypeAndValue{
+		{
+			Type:  certgen.ExtNameTokenID,
+			Value: fmt.Sprintf("%d", y.Serial),
+		},
+		{
+			Type:  certgen.ExtNameTouchPolicy,
+			Value: touchPolicy,
+		},
+	}
+
+	certBytes, err := certgen.GenCertificateFor(req.CommonName, pub, req.Days, extraNames)
 	if err != nil {
 		return nil, err
 	}
