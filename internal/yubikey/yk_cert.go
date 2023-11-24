@@ -40,11 +40,22 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 		return nil, err
 	}
 
-	return y.setupCertificate(mgmtKey, slot, req.CommonName, pub, req.Days)
-}
+	var touchPolicy string
+	switch req.TouchPolicy {
+	case piv.TouchPolicyNever:
+		touchPolicy = "never"
 
-func (y *Yubikey) setupCertificate(mgmtKey [24]byte, slot Slot, commonName string, pub crypto.PublicKey, validDays int) (*x509.Certificate, error) {
-	certBytes, err := certgen.GenCertificateFor(commonName, pub, validDays)
+	case piv.TouchPolicyAlways:
+		touchPolicy = "always"
+
+	case piv.TouchPolicyCached:
+		touchPolicy = "cached"
+
+	default:
+		touchPolicy = "-"
+	}
+
+	certBytes, err := certgen.GenCertificateFor(req.CommonName, pub, req.Days, fmt.Sprintf("%d", y.Serial), touchPolicy)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func GenCertificateFor(commonName string, pub crypto.PublicKey, days int) ([]byte, error) {
+func GenCertificateFor(commonName string, pub crypto.PublicKey, days int, tokenID, touchPolicy string) ([]byte, error) {
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
@@ -32,6 +32,16 @@ func GenCertificateFor(commonName string, pub crypto.PublicKey, days int) ([]byt
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
 		Subject: pkix.Name{
 			CommonName: commonName,
+			ExtraNames: []pkix.AttributeTypeAndValue{
+				{
+					Type:  ExtNameTokenID,
+					Value: tokenID,
+				},
+				{
+					Type:  ExtNameTouchPolicy,
+					Value: touchPolicy,
+				},
+			},
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(0, 0, days),
