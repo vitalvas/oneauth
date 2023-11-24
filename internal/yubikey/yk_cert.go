@@ -59,7 +59,7 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 	extraNames := []pkix.AttributeTypeAndValue{
 		{
 			Type:  certgen.ExtNameTokenID,
-			Value: fmt.Sprintf("%d", y.Serial),
+			Value: fmt.Sprintf("yubikey-%d", y.Serial),
 		},
 		{
 			Type:  certgen.ExtNameTouchPolicy,
