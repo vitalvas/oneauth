@@ -45,7 +45,6 @@ var yubikeyListCmd = &cli.Command{
 
 			for _, key := range keys {
 				fmt.Printf("   - %s | %s:\n", key.Slot.PIVSlot.String(), key.Subject.CommonName)
-				fmt.Printf("     - type: %s serial: %s\n", key.SignatureAlgorithm.String(), key.SerialNumber.String())
 				fmt.Printf("     - created: %s expires: %s\n", key.NotBefore.Local().Format(time.RFC3339), key.NotAfter.Local().Format(time.RFC3339))
 
 				if certSSHKey, err := tools.GetSSHPublicKey(key.PublicKey); err == nil {

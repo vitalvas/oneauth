@@ -2,11 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-piv/piv-go/piv"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/certgen"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 )
 
@@ -49,6 +51,8 @@ var setupCmd = &cli.Command{
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
+		var afterLines []string
+
 		serial := c.Uint64("serial")
 		if serial == 0 {
 			return fmt.Errorf("serial is required")
@@ -146,11 +150,32 @@ var setupCmd = &cli.Command{
 					TouchPolicy: touchPolicy,
 				},
 			})
+
+			keys, err := key.ListKeys(yubikey.SlotKeyRSA, yubikey.SlotKeyECDSA)
+			if err != nil {
+				return fmt.Errorf("failed to list keys: %w", err)
+			}
+
+			for _, key := range keys {
+				if certSSHKey, err := tools.GetSSHPublicKey(key.PublicKey); err == nil {
+					certSSHKeyStr := strings.TrimSpace(string(certSSHKey))
+					afterLines = append(afterLines, fmt.Sprintf("Insecure SSH: %s", certSSHKeyStr))
+				}
+			}
+
 		} else {
 			fmt.Println("Skipping insecure keys generation")
 		}
 
 		fmt.Println("Done")
+
+		if len(afterLines) > 0 {
+			fmt.Println(strings.Repeat("-", 60))
+		}
+
+		for _, line := range afterLines {
+			fmt.Println("-:", line)
+		}
 
 		return nil
 	},
