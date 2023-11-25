@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
+          - 'ubuntu-20.04'
           - macos-latest
 
     steps:
@@ -28,8 +28,8 @@ jobs:
         with:
           go-version: 1.21
 
-      - name: install deps
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install deps for Linux
+        if: matrix.os == 'ubuntu-20.04'
         run: sudo apt install -quy libpcsclite-dev
 
       - name: golangci-lint
