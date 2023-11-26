@@ -19,7 +19,7 @@
 
 * [x] MacOS
   * [x] Arch: amd64
-  * [ ] Arch: arm64
+  * [x] Arch: arm64
   * [ ] Using `launchd` for agent
   * [ ] Using keychain for storing PIN and PUK
 * [ ] Linux
