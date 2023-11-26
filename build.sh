@@ -9,6 +9,9 @@ mkdir -p build/${GOOS}/${GOARCH}
 
 go build -ldflags '-w -s' -o build/${GOOS}/${GOARCH}/oneauth cmd/oneauth/main.go
 
+# ensure the binary is working
+./build/${GOOS}/${GOARCH}/oneauth --version
+
 tar -czvf build/oneauth_${GOOS}_${GOARCH}.tar.gz -C build/${GOOS}/${GOARCH} oneauth
 
 if [ ! -z "${GITHUB_ACTIONS}" ]; then
