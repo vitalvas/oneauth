@@ -21,7 +21,7 @@ jobs:
         os:
           - 'ubuntu-20.04'
           - macos-latest
-          - macos-latest-xlarge
+          # - macos-latest-xlarge  # TODO: enable on release (costs required)
 
     steps:
       - uses: actions/checkout@v4
