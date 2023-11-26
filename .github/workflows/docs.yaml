@@ -1,0 +1,46 @@
+name: Docs
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::966137286427:role/github-actions-vitalvas-oneauth
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+
+      - name: Install deps
+        working-directory: docs/
+        run: pip install -r requirements.txt
+
+      - name: Build docs
+        working-directory: docs/
+        run: mkdocs build
+
+      - name: Deploy to S3
+        working-directory: docs/
+        run: aws s3 sync --delete site/ s3://oneauth.vitalvas.dev --cache-control "public, max-age=43200"
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id EJ3XJ8HIT9DEF --paths "/*"

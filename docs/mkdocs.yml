@@ -1,0 +1,32 @@
+site_name: OneAuth
+
+docs_dir: docs/
+repo_name: 'vitalvas/oneauth'
+repo_url: 'https://github.com/vitalvas/oneauth'
+edit_uri: edit/master/docs/docs/
+
+theme:
+  name: 'material'
+  language: en
+  icon:
+    logo: material/shield-home
+    repo: fontawesome/brands/github
+  features:
+    - header.autohide
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+  palette:
+    primary: teal
+
+markdown_extensions:
+  - md_in_html
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true

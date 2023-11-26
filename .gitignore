@@ -1,2 +1,4 @@
 build/
+docs/site/
 _tmp/
+.cache
