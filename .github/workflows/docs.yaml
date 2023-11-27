@@ -40,7 +40,7 @@ jobs:
 
       - name: Deploy to S3
         working-directory: docs/
-        run: aws s3 sync --delete site/ s3://oneauth.vitalvas.dev --cache-control "public, max-age=43200"
+        run: aws s3 sync --delete site/ s3://oneauth.vitalvas.dev --cache-control "public"
 
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id EJ3XJ8HIT9DEF --paths "/*"
