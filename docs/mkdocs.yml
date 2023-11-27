@@ -27,3 +27,8 @@ markdown_extensions:
 
 plugins:
   - git-revision-date-localized
+
+extra:
+  analytics:
+    provider: google
+    property: G-B11JFXW6PV
