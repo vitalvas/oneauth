@@ -9,14 +9,6 @@ Several techniques are used to ensure the security model.
 1. Unix ACL. By default, socket access is limited to the user being started. (the user can change this)
 2. Inside the application, it is checked who is making the request by UID. If it is not the same as the user being launched and not root (uid 0) - the request will be rejected. (cannot be disabled or skipped)
 
-### YubiKey
-
-#### Touch Policy
-
-* `always` - always require touch
-* `cached` - require touch and caches it for 15 seconds
-* `never` - never require touch
-
 ## Robot Access
 
 It is not possible to use Yubikey for robots to access equipment. For this purpose, short-lived certificates are used. (for example 1 day)

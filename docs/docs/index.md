@@ -1,3 +1,7 @@
+---
+hide:
+    - toc
+---
 # OneAuth
 
 OneAuth is a custom SSH agent (maybe not only in the future) for working with built-in PKI on top of Yubikey, which:

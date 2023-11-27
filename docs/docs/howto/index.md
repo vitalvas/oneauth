@@ -26,8 +26,24 @@ The use of certificates provides many different advantages in the context of sec
 * The ability to revoke a certificate
 * The ability to control the validity period of the certificate
 * The ability to control the use of the certificate (e.g. only for authentication, only for signing, etc.)
+* No need to deploy each key certificate to the server (you only need trust in the CA)
+* Privileges can be inserted into the certificate.
 
 Typically, private keys are an obscure entity in a security context. The use of private keys should be clearly regulated, and used only where there is no support for the use of certificates.
+
+## The passwordless
+
+Using certificates allows you to authenticate on the server without any passwords.
+
+Authentication using passwords brings many different problems.
+
+For example, if we do this using Active Directory using sssd. This raises two problems:
+
+* the user enters his password on a potentially hacked server. If we imagine a situation where an attacker hacked the server:
+    * SRE/DevOps comes to her to sort out the problem
+    * enters his domain password
+    * the attacker receives the password to further develop the attack
+* It allows you to brute domain passwords. Since this is a server segment, monitoring and investigating such incidents is very complicated
 
 ## Why yubikey?
 

@@ -1,5 +1,5 @@
 mkdocs
 mkdocs-plugin-tags
-mkdocs-git-revision-date-plugin
 mkdocs-material
 mkdocs-material-extensions
+mkdocs-git-revision-date-localized-plugin
