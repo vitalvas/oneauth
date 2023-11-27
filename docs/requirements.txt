@@ -3,3 +3,4 @@ mkdocs-plugin-tags
 mkdocs-material
 mkdocs-material-extensions
 mkdocs-git-revision-date-localized-plugin
+mkdocs-minify-plugin

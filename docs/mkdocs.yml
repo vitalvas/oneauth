@@ -26,7 +26,10 @@ markdown_extensions:
   - pymdownx.emoji
 
 plugins:
+  - search
   - git-revision-date-localized
+  - minify:
+      minify_html: true
 
 extra:
   analytics:
