@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/internal/sshagent"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -18,7 +19,7 @@ var agentCmd = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "socket",
-			Value: filepath.Join(os.Getenv("HOME"), ".oneauth/ssh-agent.sock"),
+			Value: filepath.Join(tools.GetHomeDir(), ".oneauth/ssh-agent.sock"),
 		},
 		&cli.Uint64Flag{
 			Name:  "serial",
