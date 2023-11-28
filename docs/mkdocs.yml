@@ -18,7 +18,9 @@ theme:
     accent: blue
   features:
     - navigation.indexes
+    - toc.integrate
     - search.suggest
+    - toc.follow
 
 markdown_extensions:
   - md_in_html
@@ -26,10 +28,17 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
   - def_list
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.emoji
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 
 plugins:
   - search
