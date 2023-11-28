@@ -137,6 +137,8 @@ Here you need to understand that in addition to certificates, many other differe
 
 Most of them look like simple generation of private/public keys without centralized management. (the output looks like a regular SSH key)
 
+Mature companies integrate with CA.
+
 ### Build bastions (aka jump hosts)
 
 Counting on what they can:
@@ -147,9 +149,3 @@ Counting on what they can:
 * implement MFA (FIDO2? -> hardware token, PUSH? -> DUO, ...)
 
 This is an additional measure to a correct authentication method, and not a replacement for it.
-
-### Public key management
-
-Easy management of public keys using automation systems (in many cases - simply by hand)
-
-All responsibility for the security of the key falls on the shoulders of the user.
