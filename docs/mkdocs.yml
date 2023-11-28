@@ -13,7 +13,9 @@ theme:
     logo: material/shield-home
     repo: fontawesome/brands/github
   palette:
+    scheme: default
     primary: teal
+    accent: blue
   features:
     - navigation.indexes
     - search.suggest
@@ -39,3 +41,7 @@ extra:
   analytics:
     provider: google
     property: G-B11JFXW6PV
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vitalvas/oneauth/discussions
+      name: Discussions
