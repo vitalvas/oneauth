@@ -42,7 +42,7 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 			default:
 			}
 
-			if errors.Is(err, net.ErrClosed) || errors.Is(err, io.ErrClosedPipe) {
+			if errors.Is(err, net.ErrClosed) || errors.Is(err, io.ErrClosedPipe) || errors.Is(err, io.EOF) {
 				return nil
 			}
 
@@ -55,6 +55,6 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 			return fmt.Errorf("failed to accept: %w", err)
 		}
 
-		go a.HandleConn(conn)
+		go a.handleConn(conn)
 	}
 }

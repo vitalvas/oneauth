@@ -1,13 +1,11 @@
-package sshagent
+package netutil
 
 import (
 	"fmt"
 	"os"
-
-	"github.com/vitalvas/oneauth/internal/netutil"
 )
 
-func checkCreds(creds *netutil.UnixCreds) error {
+func CheckCreds(creds *UnixCreds) error {
 	uid := os.Getuid()
 
 	if creds.UID > 0 && creds.UID != uid {

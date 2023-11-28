@@ -35,7 +35,7 @@ func (a *SSHAgent) Close() error {
 	return nil
 }
 
-func (a *SSHAgent) HandleConn(conn net.Conn) {
+func (a *SSHAgent) handleConn(conn net.Conn) {
 	defer conn.Close()
 
 	creds, err := netutil.UnixSocketCreds(conn)
@@ -44,7 +44,7 @@ func (a *SSHAgent) HandleConn(conn net.Conn) {
 		return
 	}
 
-	if err := checkCreds(&creds); err != nil {
+	if err := netutil.CheckCreds(&creds); err != nil {
 		log.Println(err)
 		return
 	}
