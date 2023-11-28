@@ -1,5 +1,6 @@
 site_name: OneAuth
 
+site_url: https://oneauth.vitalvas.dev
 docs_dir: docs/
 repo_name: 'vitalvas/oneauth'
 repo_url: 'https://github.com/vitalvas/oneauth'
@@ -13,6 +14,9 @@ theme:
     repo: fontawesome/brands/github
   palette:
     primary: teal
+  features:
+    - navigation.indexes
+    - search.suggest
 
 markdown_extensions:
   - md_in_html

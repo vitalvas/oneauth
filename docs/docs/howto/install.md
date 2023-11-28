@@ -6,9 +6,11 @@
 
 Required no less than 10.14 (Mojave).
 
+No additional requirements. All required libraries are included in the OS.
+
 ### Linux
 
-#### Ubuntu
+#### Ubuntu / Debian
 
 ```bash
 apt install libccid pcscd
