@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/go-piv/piv-go v1.11.0
-	github.com/urfave/cli/v2 v2.25.7
+	github.com/urfave/cli/v2 v2.26.0
 	github.com/vitalvas/gokit v0.8.0
 	golang.org/x/crypto v0.16.0
 	golang.org/x/sync v0.5.0
