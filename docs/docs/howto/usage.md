@@ -19,5 +19,5 @@ Host *.bastion.example.com
     # for authentication with ssh-agent to bastion host
     IdentityAgent ~/.oneauth/ssh-agent.sock
     # for authentication with ssh-agent from bastion host to hosts (forwarding agent)
-    ForwardAgent ~/.oneauth/ssh-agent.
+    ForwardAgent ~/.oneauth/ssh-agent.sock
 ```
