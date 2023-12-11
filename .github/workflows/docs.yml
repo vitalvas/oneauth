@@ -26,7 +26,7 @@ jobs:
           role-to-assume: arn:aws:iam::966137286427:role/github-actions-vitalvas-oneauth
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.x
 
