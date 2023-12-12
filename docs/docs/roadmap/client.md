@@ -2,8 +2,6 @@
 
 * [ ] Self update
 * [ ] Config file
-* [ ] Encryption and decryption of data
-* [ ] Signing and verification of data
 * [ ] Using PIN policy
 * [x] Using touch policy
 
