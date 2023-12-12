@@ -39,8 +39,13 @@ var setupCmd = &cli.Command{
 			Value: 3650,
 		},
 		&cli.Uint64Flag{
+			Name:  "rsa-bits",
+			Usage: "Number of bits for the insecure RSA keys. Supported values are 2048. 0 to skip generation",
+			Value: 0,
+		},
+		&cli.Uint64Flag{
 			Name:  "ecc-bits",
-			Usage: "Number of bits for the insecure ECC keys. Supported values are 256 and 384",
+			Usage: "Number of bits for the insecure ECC keys. Supported values are 256 and 384. 0 to skip generation",
 			Value: 256,
 		},
 		&cli.StringFlag{
@@ -118,38 +123,46 @@ var setupCmd = &cli.Command{
 				return fmt.Errorf("unsupported touch policy: %s", c.String("touch-policy"))
 			}
 
-			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
-				CommonName: certgen.GenCommonName(username, "insecure-rsa"),
-				Days:       int(validDays),
-				Key: piv.Key{
-					Algorithm:   piv.AlgorithmRSA2048,
-					PINPolicy:   piv.PINPolicyNever,
-					TouchPolicy: touchPolicy,
-				},
-			})
+			if rsaBits := c.Uint64("rsa-bits"); rsaBits != 0 {
+				if rsaBits != 2048 {
+					return fmt.Errorf("unsupported RSA bits: %d", rsaBits)
+				}
+
+				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
+					CommonName: certgen.GenCommonName(username, "insecure-rsa"),
+					Days:       int(validDays),
+					Key: piv.Key{
+						Algorithm:   piv.AlgorithmRSA2048,
+						PINPolicy:   piv.PINPolicyNever,
+						TouchPolicy: touchPolicy,
+					},
+				})
+			}
 
 			var eccAlgo piv.Algorithm
 
-			switch c.Uint64("ecc-bits") {
-			case 256:
-				eccAlgo = piv.AlgorithmEC256
+			if eccBits := c.Uint64("ecc-bits"); eccBits != 0 {
+				switch eccBits {
+				case 256:
+					eccAlgo = piv.AlgorithmEC256
 
-			case 384:
-				eccAlgo = piv.AlgorithmEC384
+				case 384:
+					eccAlgo = piv.AlgorithmEC384
 
-			default:
-				return fmt.Errorf("unsupported ECC bits: %d", c.Uint64("ecc-bits"))
+				default:
+					return fmt.Errorf("unsupported ECC bits: %d", c.Uint64("ecc-bits"))
+				}
+
+				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
+					CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
+					Days:       int(validDays),
+					Key: piv.Key{
+						Algorithm:   eccAlgo,
+						PINPolicy:   piv.PINPolicyNever,
+						TouchPolicy: touchPolicy,
+					},
+				})
 			}
-
-			key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
-				CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
-				Days:       int(validDays),
-				Key: piv.Key{
-					Algorithm:   eccAlgo,
-					PINPolicy:   piv.PINPolicyNever,
-					TouchPolicy: touchPolicy,
-				},
-			})
 
 			keys, err := key.ListKeys(yubikey.SlotKeyRSA, yubikey.SlotKeyECDSA)
 			if err != nil {
