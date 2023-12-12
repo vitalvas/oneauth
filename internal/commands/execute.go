@@ -23,7 +23,6 @@ func Execute() {
 		Version: version,
 		Commands: []*cli.Command{
 			agentCmd,
-			dataCmd,
 			infoCmd,
 			setupCmd,
 			yubikeyCmd,
