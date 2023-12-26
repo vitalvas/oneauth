@@ -37,6 +37,12 @@ jobs:
         if: matrix.os == 'ubuntu-20.04'
         run: sudo apt install -quy libpcsclite-dev
 
+      - name: Test
+        run: go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Test Race
+        run: go test -race -v ./...
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
 
@@ -48,3 +54,10 @@ jobs:
 
       - name: Build and upload
         run: bash build.sh
+      
+      - name: Publish coverage
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          file: ./coverage.txt
