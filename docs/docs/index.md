@@ -21,7 +21,7 @@ OneAuth is a custom SSH agent (maybe not only in the future) for working with bu
 
 These are the devices that are currently tested and supported:
 
-* [YubiKey 5 Nano](https://www.yubico.com/product/yubikey-5-nano/) *(recommended)*
-* [YubiKey 5C Nano](https://www.yubico.com/product/yubikey-5c-nano/) *(recommended)*
-* [YubiKey 5C](https://www.yubico.com/product/yubikey-5c/)
-* [YubiKey 5 NFC](https://www.yubico.com/product/yubikey-5-nfc/)
+* [YubiKey 5 Nano](https://www.yubico.com/product/yubikey-5-nano/?utm_source=oneauth.vitalvas.dev) *(recommended)*
+* [YubiKey 5C Nano](https://www.yubico.com/product/yubikey-5c-nano/?utm_source=oneauth.vitalvas.dev) *(recommended)*
+* [YubiKey 5C](https://www.yubico.com/product/yubikey-5c/?utm_source=oneauth.vitalvas.dev)
+* [YubiKey 5 NFC](https://www.yubico.com/product/yubikey-5-nfc/?utm_source=oneauth.vitalvas.dev)
