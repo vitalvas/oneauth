@@ -6,7 +6,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func (s *Server) sshPasswordCallback(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
+func (s *Server) sshPasswordCallback(_ ssh.ConnMetadata, _ []byte) (*ssh.Permissions, error) {
 	return nil, errors.New("yubikey OTP authentication is not supported yet")
 }
 
