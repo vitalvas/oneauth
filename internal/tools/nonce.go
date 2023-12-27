@@ -1,19 +1,15 @@
 package tools
 
-import (
-	"crypto/rand"
-	"encoding/base64"
-)
+import "math/rand"
+
+const nonceAllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func GenerateNonce(length int) (string, error) {
-	byteSize := (length*3 + 3) / 4
+	nonce := make([]byte, length)
 
-	randomBytes := make([]byte, byteSize)
-	if _, err := rand.Read(randomBytes); err != nil {
-		return "", err
+	for i := range nonce {
+		nonce[i] = nonceAllowedChars[rand.Intn(len(nonceAllowedChars))]
 	}
 
-	nonce := base64.RawURLEncoding.EncodeToString(randomBytes)[:length]
-
-	return nonce, nil
+	return string(nonce), nil
 }
