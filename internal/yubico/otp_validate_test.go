@@ -1,6 +1,8 @@
 package yubico
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestValidateOTP(t *testing.T) {
 	otp := map[string]int64{
@@ -27,6 +29,20 @@ func TestValidateOTP(t *testing.T) {
 
 		if result != expected {
 			t.Fatalf("expected %d, got %d", expected, result)
+		}
+	}
+}
+
+func TestValidateOTPFail(t *testing.T) {
+	otp := map[string]error{
+		"qwerty": ErrOTPHasInvalidLength,
+		"cccccbhuinjdhkhclghtejrntflfbevvrvfvtkffghzz": ErrWrongOTPFormat,
+	}
+
+	for otp, expected := range otp {
+		_, err := ValidateOTP(otp)
+		if err != expected {
+			t.Fatalf("expected %s, got %s", expected, err)
 		}
 	}
 }
