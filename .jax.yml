@@ -1,0 +1,4 @@
+project: oneauth
+atrium:
+  realm: github/public
+  owner: [g:oneauth]
