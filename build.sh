@@ -33,3 +33,14 @@ if [ "${GOOS}" == "linux" ] || [ "${GOOS}" == "darwin" ]; then
         aws s3 cp build/oneauth-server_${GOOS}_${GOARCH}.tar.gz s3://vv-github-build-artifacts/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/${GITHUB_SHA}/oneauth-server_${GOOS}_${GOARCH}.tar.gz
     fi
 fi
+
+## -- Build the ssh-test-server --
+if [ "${GOOS}" == "linux" ]; then
+    CGO_ENABLED=0 go build -ldflags '-w -s' -o build/${GOOS}/${GOARCH}/oneauth-ssh-test-server cmd/ssh-test-server/main.go
+
+    tar -czvf build/oneauth-ssh-test-server_${GOOS}_${GOARCH}.tar.gz -C build/${GOOS}/${GOARCH} oneauth-ssh-test-server
+
+    if [ ! -z "${GITHUB_ACTIONS}" ]; then
+        aws s3 cp build/oneauth-ssh-test-server_${GOOS}_${GOARCH}.tar.gz s3://vv-github-build-artifacts/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}/${GITHUB_SHA}/oneauth-ssh-test-server_${GOOS}_${GOARCH}.tar.gz
+    fi
+fi
