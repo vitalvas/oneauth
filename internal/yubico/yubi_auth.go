@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/vitalvas/oneauth/internal/tools"
 )
@@ -60,7 +61,9 @@ func NewYubiAuth(clientID int, clientSecret string) (*YubiAuth, error) {
 		clientID:     clientID,
 		clientSecret: keyBytes,
 
-		httpClient: &http.Client{},
+		httpClient: &http.Client{
+			Timeout: 5 * time.Second,
+		},
 	}, nil
 }
 
@@ -83,6 +86,7 @@ func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
 		signRequest(params, y.clientSecret)
 	}
 
+	// TODO: add verify response from yubicloud
 	return y.getVerify(params)
 }
 
