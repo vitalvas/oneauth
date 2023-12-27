@@ -43,6 +43,7 @@ type YubiAuth struct {
 }
 
 type VerifyResponse struct {
+	Serial         int64
 	Timestamp      int64
 	SessionCounter int64
 	SessionUse     int64
@@ -68,6 +69,11 @@ func NewYubiAuth(clientID int, clientSecret string) (*YubiAuth, error) {
 }
 
 func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
+	serial, err := ValidateOTP(otp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate otp: %w", err)
+	}
+
 	nonce, err := tools.GenerateNonce(32)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate nonce: %w", err)
@@ -87,7 +93,14 @@ func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
 	}
 
 	// TODO: add verify response from yubicloud
-	return y.getVerify(params)
+	resp, err := y.getVerify(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.Serial = serial
+
+	return resp, nil
 }
 
 func (y *YubiAuth) getVerify(params url.Values) (*VerifyResponse, error) {
