@@ -4,7 +4,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/vitalvas/oneauth/internal/commands"
+	"github.com/vitalvas/oneauth/cmd/oneauth/commands"
 )
 
 func main() {
