@@ -6,9 +6,9 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -20,11 +20,9 @@ type Server struct {
 func Execute() {
 	srv := &Server{}
 
-	version := fmt.Sprintf("0.0.%d", time.Now().Unix())
-
 	app := &cli.App{
 		Name:    "oneauth-ssh-test-server",
-		Version: version,
+		Version: buildinfo.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "server-url",

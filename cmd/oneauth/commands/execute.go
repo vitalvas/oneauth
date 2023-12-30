@@ -1,12 +1,11 @@
 package commands
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/tools"
 )
 
@@ -15,12 +14,10 @@ func Execute() {
 		log.Fatal("oneauth client must not be run as root")
 	}
 
-	version := fmt.Sprintf("0.0.%d", time.Now().Unix())
-
 	app := &cli.App{
 		Name:    "oneauth",
 		Usage:   "OneAuth is a CLI tool to use unified authentication and authorization",
-		Version: version,
+		Version: buildinfo.Version,
 		Commands: []*cli.Command{
 			agentCmd,
 			infoCmd,

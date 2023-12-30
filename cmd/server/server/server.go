@@ -1,12 +1,11 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/yubico"
 )
 
@@ -17,13 +16,11 @@ type Server struct {
 }
 
 func Execute() {
-	version := fmt.Sprintf("0.0.%d", time.Now().Unix())
-
 	srv := Server{}
 
 	app := &cli.App{
 		Name:    "oneauth-server",
-		Version: version,
+		Version: buildinfo.Version,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "config",
