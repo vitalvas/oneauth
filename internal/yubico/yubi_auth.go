@@ -28,10 +28,10 @@ var (
 		"https://api5.yubico.com/wsapi/2.0/verify",
 	}
 	serverErrorCodes = []string{
-		"BACKEND_ERROR",
-		"NOT_ENOUGH_ANSWERS",
-		"OPERATION_NOT_ALLOWED",
-		"NO_SUCH_CLIENT",
+		StatusBackendError,
+		StatusNotEnoughAnswers,
+		StatusOperationNotAllowed,
+		StatusNoSuchClient,
 	}
 )
 

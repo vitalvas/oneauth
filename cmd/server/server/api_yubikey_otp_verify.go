@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vitalvas/oneauth/internal/yubico"
 )
 
 type YubikeyOTPVerifyRequest struct {
@@ -35,6 +36,11 @@ func (s *Server) yubikeyOTPVerify(ginCtx *gin.Context) {
 	valid, err := s.yubico.Verify(request.OTP)
 	if err != nil {
 		ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if valid.Status != yubico.StatusOK {
+		ginCtx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid OTP"})
 		return
 	}
 
