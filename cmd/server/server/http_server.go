@@ -27,8 +27,13 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	v1 := r.Group("/api/v1")
 	{
+		wellKnown := r.Group("/.well-known")
+		wellKnown.GET("/security.txt", s.wellKnownSecurityTxt)
+	}
+
+	{
+		v1 := r.Group("/api/v1")
 		v1.GET("/yubikey/otp/verify", s.yubikeyOTPVerify)
 		v1.POST("/yubikey/otp/verify", s.yubikeyOTPVerify)
 	}
