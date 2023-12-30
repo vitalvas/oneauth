@@ -4,37 +4,77 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
+	"os"
+	"time"
 
+	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
 )
 
 type Server struct {
+	serverURL *url.URL
 	sshConfig *ssh.ServerConfig
 }
 
 func Execute() {
 	srv := &Server{}
 
-	srv.sshConfig = &ssh.ServerConfig{
-		ServerVersion:     "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
-		PasswordCallback:  srv.sshPasswordCallback,
-		PublicKeyCallback: srv.sshPublicKeyCallback,
+	version := fmt.Sprintf("0.0.%d", time.Now().Unix())
 
-		BannerCallback: func(conn ssh.ConnMetadata) string {
-			remote, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-			return fmt.Sprintf("Welcome %s from %s!\n", conn.User(), remote)
+	app := &cli.App{
+		Name:    "oneauth-ssh-test-server",
+		Version: version,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "server-url",
+				Usage:   "OneAuth server URL",
+				Value:   "http://127.0.0.1:8080",
+				EnvVars: []string{"ONEAUTH_SERVER_URL"},
+			},
 		},
+		Before: srv.loadConfig,
+		Action: srv.runServer(srv),
 	}
 
-	private, err := generatePrivateHostKey()
+	if err := app.Run(os.Args); err != nil {
+		log.Println(err)
+	}
+}
+
+func (s *Server) loadConfig(c *cli.Context) error {
+	serverURL := c.String("server-url")
+	parsedServerURL, err := url.Parse(serverURL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	srv.sshConfig.AddHostKey(private)
+	s.serverURL = parsedServerURL
 
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+	return nil
+}
+
+func (s *Server) runServer(srv *Server) cli.ActionFunc {
+	return func(c *cli.Context) error {
+		srv.sshConfig = &ssh.ServerConfig{
+			ServerVersion:     "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
+			PasswordCallback:  srv.sshPasswordCallback,
+			PublicKeyCallback: srv.sshPublicKeyCallback,
+
+			BannerCallback: func(conn ssh.ConnMetadata) string {
+				remote, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+				return fmt.Sprintf("Welcome %s from %s!\n", conn.User(), remote)
+			},
+		}
+
+		private, err := generatePrivateHostKey()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		srv.sshConfig.AddHostKey(private)
+
+		return srv.ListenAndServe()
 	}
 }
 
