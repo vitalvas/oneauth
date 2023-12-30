@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/vitalvas/oneauth/internal/server"
+	"github.com/vitalvas/oneauth/cmd/server/server"
 )
 
 func main() {
