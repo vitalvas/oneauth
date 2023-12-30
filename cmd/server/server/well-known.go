@@ -12,3 +12,7 @@ Contact: mailto:oneauth+security@vitalvas.dev
 `
 	ginCtx.String(http.StatusOK, body)
 }
+
+func (s *Server) wellKnownOneAuth(ginCtx *gin.Context) {
+	ginCtx.JSON(http.StatusOK, gin.H{})
+}

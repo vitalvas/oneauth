@@ -30,6 +30,7 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 	{
 		wellKnown := r.Group("/.well-known")
 		wellKnown.GET("/security.txt", s.wellKnownSecurityTxt)
+		wellKnown.GET("/oneauth-server.json", s.wellKnownOneAuth)
 	}
 
 	{
