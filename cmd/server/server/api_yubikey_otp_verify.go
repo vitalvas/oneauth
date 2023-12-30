@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,12 @@ import (
 type YubikeyOTPVerifyRequest struct {
 	Username string `json:"username" form:"username" binding:"required"`
 	OTP      string `json:"otp" form:"otp" binding:"required"`
+}
+
+type YubikeyOTPVerifyResponse struct {
+	Username string `json:"username"`
+	OTP      string `json:"otp"`
+	Serial   int64  `json:"serial"`
 }
 
 func (s *Server) yubikeyOTPVerify(ginCtx *gin.Context) {
@@ -40,9 +47,13 @@ func (s *Server) yubikeyOTPVerify(ginCtx *gin.Context) {
 	}
 
 	if valid.Status != yubico.StatusOK {
-		ginCtx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid OTP"})
+		ginCtx.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("invalid OTP: %s", valid.Status)})
 		return
 	}
 
-	ginCtx.JSON(http.StatusOK, valid)
+	ginCtx.JSON(http.StatusOK, YubikeyOTPVerifyResponse{
+		Username: request.Username,
+		OTP:      request.OTP,
+		Serial:   valid.Serial,
+	})
 }
