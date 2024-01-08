@@ -12,7 +12,8 @@ import gzip
 
 class Make:
     def __init__(self):
-        self.VERSION = 'v0.0.' + str(int(time.time()))
+        self.VERSION = self._get_version()
+        self._commit_id = os.getenv('GITHUB_SHA')
         self.GOOS = self._exec('go env GOOS')
         self.GOARCH = self._exec('go env GOARCH')
         self._apps = [
@@ -36,6 +37,19 @@ class Make:
                 ]
             }
         ]
+    
+    @staticmethod
+    def _get_version() -> str:
+        # on create tag
+        ref_name = os.getenv('GITHUB_REF_NAME')
+        if ref_name and ref_name.startswith('v'):
+            return ref_name
+
+        run_id = os.getenv('GITHUB_RUN_ID')
+        if run_id:
+            return 'v0.0.' + run_id
+
+        return 'v0.0.' + str(int(time.time()))
         
     @staticmethod
     def _exec(cmd: str) -> str:
@@ -76,7 +90,11 @@ class Make:
         my_env['GOOS'] = goos
         my_env['GOARCH'] = goarch
 
-        ld_flags = f'-w -s -X \"github.com/vitalvas/oneauth/internal/buildinfo.Version={self.VERSION}\"'        
+        ld_flags = f'-w -s -X \"github.com/vitalvas/oneauth/internal/buildinfo.Version={self.VERSION}\"'
+
+        if self._commit_id:
+            ld_flags += f' -X \"github.com/vitalvas/oneauth/internal/buildinfo.Commit={self._commit_id}\"'
+
         output = f'./build/{goos}/{goarch}/{name}'
 
         build_cmd = ['go', 'build', '-ldflags', ld_flags, '-o', output, f'{app_dir}/main.go']
@@ -89,11 +107,11 @@ class Make:
         )
 
         for line in raw.stdout:
-            print(line.strip())
+            print(line.decode('utf-8').strip())
             
         is_break = False
         for line in raw.stderr:
-            print(line.strip())
+            print(line.decode('utf-8').strip())
             is_break = True
             
         if is_break:
@@ -123,6 +141,8 @@ class Make:
             'version': self.VERSION,
             'sha256': self.get_sha256(goos, goarch, name)
         }
+        if self._commit_id:
+            manifest['commit'] = self._commit_id
         
         file_name = f'{name}_{goos}_{goarch}_manifest.json'
         
@@ -146,11 +166,11 @@ class Make:
         raw.wait()
         
         for line in raw.stdout:
-            print(line.strip())
+            print(line.decode('utf-8').strip())
         
         is_break = False
         for line in raw.stderr:
-            print(line.strip())
+            print(line.decode('utf-8').strip())
             is_break = True
     
         if is_break:

@@ -1,3 +1,6 @@
 package buildinfo
 
-var Version string
+var (
+	Version string
+	Commit  string
+)
