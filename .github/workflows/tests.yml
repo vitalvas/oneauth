@@ -53,7 +53,7 @@ jobs:
           role-to-assume: arn:aws:iam::966137286427:role/github-actions-vitalvas-oneauth
 
       - name: Build and upload
-        run: bash build.sh
+        run: python build.py
       
       - name: Publish coverage
         uses: codecov/codecov-action@v3
