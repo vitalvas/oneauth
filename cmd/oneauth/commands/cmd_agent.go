@@ -8,55 +8,65 @@ import (
 
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/gokit/xcmd"
+	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/internal/sshagent"
-	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/sync/errgroup"
 )
 
 var agentCmd = &cli.Command{
-	Name:  "agent",
-	Usage: "SSH Agent",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "socket",
-			Value: filepath.Join(tools.GetHomeDir(), ".oneauth/ssh-agent.sock"),
-		},
-		&cli.Uint64Flag{
-			Name:  "serial",
-			Usage: "YubiKey serial number",
-		},
-	},
-	Before: selectYubiKey,
+	Name:        "agent",
+	Usage:       "SSH Agent",
+	Description: "All configuration options can be set in the config file",
 	Action: func(c *cli.Context) error {
-		serial := c.Uint64("serial")
-		if serial == 0 {
-			return fmt.Errorf("serial is required")
-		}
-
-		socketPath := c.String("socket")
-		if _, err := os.Stat(socketPath); err == nil {
-			os.Remove(socketPath)
-		}
-
-		if err := os.MkdirAll(filepath.Dir(socketPath), 0700); err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		agent, err := sshagent.New(uint32(serial))
-		if err != nil {
-			return fmt.Errorf("failed to create agent: %w", err)
-		}
-
 		group, ctx := errgroup.WithContext(c.Context)
 
-		group.Go(func() error {
-			return agent.ListenAndServe(ctx, socketPath)
-		})
+		config, err := config.Load(c.Path("config"))
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+
+		if config.Keyring.Yubikey.Serial == 0 {
+			return fmt.Errorf("yubikey serial is required")
+		}
+
+		var agent *sshagent.SSHAgent
+
+		switch config.Socket.Type {
+		case "unix":
+			if _, err := os.Stat(config.Socket.Path); err == nil {
+				os.Remove(config.Socket.Path)
+			}
+
+			if err := os.MkdirAll(filepath.Dir(config.Socket.Path), 0700); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+
+			log.Println("opening yubikey:", config.Keyring.Yubikey.Serial)
+
+			agent, err = sshagent.New(config.Keyring.Yubikey.Serial)
+			if err != nil {
+				return fmt.Errorf("failed to create agent: %w", err)
+			}
+
+			group.Go(func() error {
+				return agent.ListenAndServe(ctx, config.Socket.Path)
+			})
+
+		case "dummy":
+			log.Println("skipping socket creation")
+
+		default:
+			return fmt.Errorf("socket type %s is not supported", config.Socket.Type)
+		}
 
 		group.Go(func() error {
 			err := xcmd.WaitInterrupted(ctx)
 			log.Println("shutting down agent")
-			agent.Shutdown()
+
+			if agent != nil {
+				agent.Shutdown()
+			}
+
 			return err
 		})
 

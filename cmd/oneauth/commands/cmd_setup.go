@@ -2,15 +2,19 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/go-piv/piv-go/piv"
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/internal/certgen"
 	"github.com/vitalvas/oneauth/internal/keyring"
 	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
+	"gopkg.in/yaml.v3"
 )
 
 var setupCmd = &cli.Command{
@@ -59,12 +63,12 @@ var setupCmd = &cli.Command{
 	Action: func(c *cli.Context) error {
 		var afterLines []string
 
-		serial := c.Uint64("serial")
+		serial := uint32(c.Uint64("serial"))
 		if serial == 0 {
 			return fmt.Errorf("serial is required")
 		}
 
-		key, err := yubikey.OpenBySerial(uint32(serial))
+		key, err := yubikey.OpenBySerial(serial)
 		if err != nil {
 			return err
 		}
@@ -189,6 +193,21 @@ var setupCmd = &cli.Command{
 			fmt.Println("Skipping insecure keys generation")
 		}
 
+		configPath := c.Path("config")
+		fmt.Println("Writing config file", configPath)
+
+		conf := &config.Config{
+			Keyring: config.Keyring{
+				Yubikey: config.KeyringYubikey{
+					Serial: uint32(serial),
+				},
+			},
+		}
+
+		if err := writeConfigFile(conf, configPath); err != nil {
+			return err
+		}
+
 		fmt.Println("Done")
 
 		if len(afterLines) > 0 {
@@ -201,4 +220,26 @@ var setupCmd = &cli.Command{
 
 		return nil
 	},
+}
+
+func writeConfigFile(config *config.Config, configPath string) error {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		return err
+	}
+
+	file, err := os.Create(configPath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	enc := yaml.NewEncoder(file)
+	enc.SetIndent(2)
+
+	if err := enc.Encode(config); err != nil {
+		return err
+	}
+
+	return nil
 }

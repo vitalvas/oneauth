@@ -1,7 +1,7 @@
 # Client
 
 * [ ] Self update
-* [ ] Config file
+* [x] Config file
 * [ ] Using PIN policy
 * [x] Using touch policy
 

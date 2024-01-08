@@ -3,6 +3,7 @@ package commands
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
@@ -18,6 +19,13 @@ func Execute() {
 		Name:    "oneauth",
 		Usage:   "OneAuth is a CLI tool to use unified authentication and authorization",
 		Version: buildinfo.Version,
+		Flags: []cli.Flag{
+			&cli.PathFlag{
+				Name:  "config",
+				Usage: "path to config file",
+				Value: filepath.Join(tools.GetHomeDir(), ".oneauth/config.yaml"),
+			},
+		},
 		Commands: []*cli.Command{
 			agentCmd,
 			infoCmd,
