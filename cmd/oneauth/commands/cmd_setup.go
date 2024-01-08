@@ -8,6 +8,7 @@ import (
 	"github.com/go-piv/piv-go/piv"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/certgen"
+	"github.com/vitalvas/oneauth/internal/keyring"
 	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 )
@@ -93,6 +94,14 @@ var setupCmd = &cli.Command{
 		fmt.Println("[!] New YubiKey PUK:", newPUK)
 
 		if err := key.Reset(newPIN, newPUK); err != nil {
+			return err
+		}
+
+		if err := keyring.Set(keyring.GetYubikeyAccount(serial, "pin"), newPIN); err != nil {
+			return err
+		}
+
+		if err := keyring.Set(keyring.GetYubikeyAccount(serial, "puk"), newPUK); err != nil {
 			return err
 		}
 

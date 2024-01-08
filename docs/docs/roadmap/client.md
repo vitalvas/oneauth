@@ -17,7 +17,7 @@
     * [x] Arch: amd64
     * [x] Arch: arm64
     * [ ] Using `launchd` for agent
-    * [ ] Using keychain for storing PIN and PUK
+    * [x] Using keychain for storing PIN and PUK
 * [ ] Linux
     * [ ] Arch: amd64
     * [ ] Arch: arm64

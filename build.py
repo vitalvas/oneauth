@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+import argparse
+import gzip
+import hashlib
 import json
-import time
+import os
 import shutil
 import subprocess
-import hashlib
-import gzip
-
+import sys
+import time
 
 class Make:
     def __init__(self):
@@ -176,7 +176,7 @@ class Make:
         if is_break:
             sys.exit(1)
 
-    def build(self):
+    def build(self, app_name: str):
         print('Building...')
         print(f'Version: {self.VERSION}')
         print(f'GOOS: {self.GOOS}, GOARCH: {self.GOARCH}')
@@ -188,6 +188,9 @@ class Make:
         upload_files = []
 
         for app in self._apps:
+            if app_name != 'all' and app_name != app.get('name'):
+                continue
+            
             build = app.get('build')
             if build and f'{self.GOOS}/{self.GOARCH}' in build:
                 upload_files.extend(
@@ -210,4 +213,10 @@ class Make:
 
 if __name__ == '__main__':
     make = Make()
-    make.build()
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--app', choices=['all'] + [app.get('name') for app in make._apps], default='all')
+    
+    args = parser.parse_args()
+    
+    make.build(args.app)
