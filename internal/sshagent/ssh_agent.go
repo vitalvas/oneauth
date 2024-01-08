@@ -18,7 +18,12 @@ func (a *SSHAgent) List() ([]*agent.Key, error) {
 
 	keys := make([]*agent.Key, 0, len(yubikey.AllSSHSlots))
 
-	for _, slot := range yubikey.AllSSHSlots {
+	activeSlots, err := a.yk.GetActiveSlots(yubikey.AllSSHSlots...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active slots: %w", err)
+	}
+
+	for _, slot := range activeSlots {
 		certPublicKey, err := a.yk.GetCertPublicKey(slot.PIVSlot)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get public key: %w", err)
