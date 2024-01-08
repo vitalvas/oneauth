@@ -1,7 +1,7 @@
 package yubikey
 
 func (y *Yubikey) GetActiveSlots(slots ...Slot) ([]Slot, error) {
-	var activeSlots []Slot
+	activeSlots := make([]Slot, 0, len(slots))
 
 	keys, err := y.ListKeys(slots...)
 	if err != nil {
