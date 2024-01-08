@@ -199,7 +199,7 @@ var setupCmd = &cli.Command{
 		conf := &config.Config{
 			Keyring: config.Keyring{
 				Yubikey: config.KeyringYubikey{
-					Serial: uint32(serial),
+					Serial: serial,
 				},
 			},
 		}
