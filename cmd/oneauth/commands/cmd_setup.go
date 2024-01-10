@@ -40,18 +40,32 @@ var setupCmd = &cli.Command{
 		},
 		&cli.Uint64Flag{
 			Name:  "valid-days",
-			Usage: "Number of days the insecure keys will be valid",
+			Usage: "Number of days the insecure keys will be valid. 0 to skip generation",
 			Value: 3650,
 		},
 		&cli.Uint64Flag{
 			Name:  "rsa-bits",
 			Usage: "Number of bits for the insecure RSA keys. Supported values are 2048. 0 to skip generation",
 			Value: 0,
+			Action: func(_ *cli.Context, data uint64) error {
+				if data != 0 && data != 2048 {
+					return fmt.Errorf("unsupported RSA bits: %d", data)
+				}
+
+				return nil
+			},
 		},
 		&cli.Uint64Flag{
 			Name:  "ecc-bits",
 			Usage: "Number of bits for the insecure ECC keys. Supported values are 256 and 384. 0 to skip generation",
 			Value: 256,
+			Action: func(_ *cli.Context, data uint64) error {
+				if data != 0 && data != 256 && data != 384 {
+					return fmt.Errorf("unsupported ECC bits: %d", data)
+				}
+
+				return nil
+			},
 		},
 		&cli.StringFlag{
 			Name:  "touch-policy",
@@ -151,10 +165,6 @@ var setupCmd = &cli.Command{
 			}
 
 			if rsaBits := c.Uint64("rsa-bits"); rsaBits != 0 {
-				if rsaBits != 2048 {
-					return fmt.Errorf("unsupported RSA bits: %d", rsaBits)
-				}
-
 				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
 					CommonName: certgen.GenCommonName(username, "insecure-rsa"),
 					Days:       int(validDays),
@@ -175,9 +185,6 @@ var setupCmd = &cli.Command{
 
 				case 384:
 					eccAlgo = piv.AlgorithmEC384
-
-				default:
-					return fmt.Errorf("unsupported ECC bits: %d", c.Uint64("ecc-bits"))
 				}
 
 				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
