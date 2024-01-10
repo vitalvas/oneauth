@@ -160,7 +160,7 @@ class Make:
         with open(f'build/{file_name}', 'w') as file:
             json.dump(manifest, file)
             
-        return file_name
+        return f'{self.VERSION}/{file_name}'
     
     def create_update_manifest(self, name: str):
         repo = os.getenv('GITHUB_REPOSITORY')
@@ -187,10 +187,10 @@ class Make:
 
     def upload_file(self, file: str):
         repo = os.getenv('GITHUB_REPOSITORY')
-        upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://vv-github-build-artifacts/{repo}/{self.VERSION}/{file}']
+        upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://vv-github-build-artifacts/{repo}/{file}']
 
         if self.RELEASE:
-            upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://oneauth-files.vitalvas.dev/release/{self.VERSION}/{file}']
+            upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://oneauth-files.vitalvas.dev/release/{file}']
         
         raw = subprocess.Popen(upload_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         raw.wait()
