@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
-	"github.com/vitalvas/oneauth/internal/sshagent"
+	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"golang.org/x/sync/errgroup"
 )
 
