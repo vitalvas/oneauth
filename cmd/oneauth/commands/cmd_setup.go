@@ -58,6 +58,18 @@ var setupCmd = &cli.Command{
 			Usage: "Touch policy for the insecure keys. Supported values are cached, always and never",
 			Value: "cached",
 		},
+		&cli.StringFlag{
+			Name:  "pin-policy",
+			Usage: "PIN policy for the insecure keys. Supported values are once, always and never",
+			Value: "once",
+			Action: func(_ *cli.Context, data string) error {
+				if _, ok := yubikey.MapPINPolicy(data); ok {
+					return nil
+				}
+
+				return fmt.Errorf("unsupported PIN policy: %s", data)
+			},
+		},
 	},
 	Before: selectYubiKey,
 	Action: func(c *cli.Context) error {
@@ -136,6 +148,11 @@ var setupCmd = &cli.Command{
 				return fmt.Errorf("unsupported touch policy: %s", c.String("touch-policy"))
 			}
 
+			var pinPolicy piv.PINPolicy
+			if policy, ok := yubikey.MapPINPolicy(c.String("pin-policy")); ok {
+				pinPolicy = policy
+			}
+
 			if rsaBits := c.Uint64("rsa-bits"); rsaBits != 0 {
 				if rsaBits != 2048 {
 					return fmt.Errorf("unsupported RSA bits: %d", rsaBits)
@@ -146,7 +163,7 @@ var setupCmd = &cli.Command{
 					Days:       int(validDays),
 					Key: piv.Key{
 						Algorithm:   piv.AlgorithmRSA2048,
-						PINPolicy:   piv.PINPolicyNever,
+						PINPolicy:   pinPolicy,
 						TouchPolicy: touchPolicy,
 					},
 				})
@@ -171,7 +188,7 @@ var setupCmd = &cli.Command{
 					Days:       int(validDays),
 					Key: piv.Key{
 						Algorithm:   eccAlgo,
-						PINPolicy:   piv.PINPolicyNever,
+						PINPolicy:   pinPolicy,
 						TouchPolicy: touchPolicy,
 					},
 				})

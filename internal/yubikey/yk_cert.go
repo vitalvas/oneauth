@@ -67,6 +67,13 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 		},
 	}
 
+	if pinPolicy, ok := MapToStrPINPolicy(req.PINPolicy); ok {
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  certgen.ExtNamePinPolicy,
+			Value: pinPolicy,
+		})
+	}
+
 	certBytes, err := certgen.GenCertificateFor(req.CommonName, pub, req.Days, extraNames)
 	if err != nil {
 		return nil, err
