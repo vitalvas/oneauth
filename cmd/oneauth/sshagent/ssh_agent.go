@@ -92,11 +92,14 @@ func (a *SSHAgent) sshSign(key yubikey.Cert, data []byte, _ agent.SignatureFlags
 		}
 	}
 
-	// TODO: add input pin code support
-	priv, err := a.yk.PrivateKey(key.Slot.PIVSlot, key.PublicKey, piv.KeyAuth{})
+	priv, err := a.yk.PrivateKey(key.Slot.PIVSlot, key.PublicKey, piv.KeyAuth{
+		PINPrompt: a.askPINPrompt,
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get private key: %w", err)
 	}
+
 	signer, err := ssh.NewSignerFromKey(priv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create signer: %w", err)
