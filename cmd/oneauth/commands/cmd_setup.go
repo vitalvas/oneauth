@@ -234,6 +234,10 @@ func writeConfigFile(config *config.Config, configPath string) error {
 
 	defer file.Close()
 
+	if err := file.Chmod(0600); err != nil {
+		return err
+	}
+
 	enc := yaml.NewEncoder(file)
 	enc.SetIndent(2)
 
