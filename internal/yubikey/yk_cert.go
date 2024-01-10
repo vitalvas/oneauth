@@ -41,30 +41,18 @@ func (y *Yubikey) GenCertificate(slot Slot, pin string, req CertRequest) (*x509.
 		return nil, err
 	}
 
-	var touchPolicy string
-	switch req.TouchPolicy {
-	case piv.TouchPolicyNever:
-		touchPolicy = "never"
-
-	case piv.TouchPolicyAlways:
-		touchPolicy = "always"
-
-	case piv.TouchPolicyCached:
-		touchPolicy = "cached"
-
-	default:
-		touchPolicy = "-"
-	}
-
 	extraNames := []pkix.AttributeTypeAndValue{
 		{
 			Type:  certgen.ExtNameTokenID,
 			Value: fmt.Sprintf("yubikey-%d", y.Serial),
 		},
-		{
+	}
+
+	if touchPolicy, ok := MapToStrTouchPolicy(req.TouchPolicy); ok {
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
 			Type:  certgen.ExtNameTouchPolicy,
 			Value: touchPolicy,
-		},
+		})
 	}
 
 	if pinPolicy, ok := MapToStrPINPolicy(req.PINPolicy); ok {

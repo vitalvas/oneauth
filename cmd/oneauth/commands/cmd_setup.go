@@ -57,6 +57,13 @@ var setupCmd = &cli.Command{
 			Name:  "touch-policy",
 			Usage: "Touch policy for the insecure keys. Supported values are cached, always and never",
 			Value: "cached",
+			Action: func(_ *cli.Context, data string) error {
+				if _, ok := yubikey.MapTouchPolicy(data); ok {
+					return nil
+				}
+
+				return fmt.Errorf("unsupported touch policy: %s", data)
+			},
 		},
 		&cli.StringFlag{
 			Name:  "pin-policy",
@@ -134,18 +141,8 @@ var setupCmd = &cli.Command{
 			username := c.String("username")
 
 			var touchPolicy piv.TouchPolicy
-			switch c.String("touch-policy") {
-			case "never":
-				touchPolicy = piv.TouchPolicyNever
-
-			case "cached":
-				touchPolicy = piv.TouchPolicyCached
-
-			case "always":
-				touchPolicy = piv.TouchPolicyAlways
-
-			default:
-				return fmt.Errorf("unsupported touch policy: %s", c.String("touch-policy"))
+			if policy, ok := yubikey.MapTouchPolicy(c.String("touch-policy")); ok {
+				touchPolicy = policy
 			}
 
 			var pinPolicy piv.PINPolicy
