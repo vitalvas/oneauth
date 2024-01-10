@@ -130,7 +130,7 @@ class Make:
         
         _update_manifest = self.create_update_manifest(name)
         ref_name = os.getenv('GITHUB_REF_NAME')
-        if ref_name and (self.ref_name == 'master' or ref_name.startswith('v')):
+        if ref_name and (ref_name == 'master' or ref_name.startswith('v')):
             upload_files.append(_update_manifest)
         
         return upload_files
