@@ -170,11 +170,11 @@ class Make:
         manifest = {
             'name': name,
             'version': self.VERSION,
-            'remote_prefix': f'https://github-build-artifacts.vitalvas.dev/{repo}/',
+            'remote_prefix': f'https://github-build-artifacts.vitalvas.dev/{repo}/{self.VERSION}/',
         }
 
         if self.RELEASE:
-            manifest['remote_prefix'] = 'https://oneauth-files.vitalvas.dev/release/'
+            manifest['remote_prefix'] = f'https://oneauth-files.vitalvas.dev/release/{self.VERSION}/'
 
         file_name = f'{name}_update_manifest.json'
 
