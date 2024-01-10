@@ -10,6 +10,7 @@ import (
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
+	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -17,6 +18,18 @@ var agentCmd = &cli.Command{
 	Name:        "agent",
 	Usage:       "SSH Agent",
 	Description: "All configuration options can be set in the config file",
+	Before: func(c *cli.Context) error {
+		version := buildinfo.Version
+
+		commit := buildinfo.Commit
+		if len(commit) > 8 {
+			version += "-" + commit[:8]
+		}
+
+		log.Printf("OneAuth version: %s", version)
+
+		return nil
+	},
 	Action: func(c *cli.Context) error {
 		group, ctx := errgroup.WithContext(c.Context)
 
