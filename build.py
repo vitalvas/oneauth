@@ -146,7 +146,7 @@ class Make:
         with open(f'build/{goos}/{goarch}/{name}', 'rb') as file:
             return hashlib.sha256(file.read()).hexdigest()
 
-    def create_manifest(self, name: str, goos: str, goarch: str):
+    def create_manifest(self, name: str, goos: str, goarch: str) -> dict:
         manifest = {
             'name': name,
             'version': self.VERSION,
@@ -159,11 +159,13 @@ class Make:
         
         with open(f'build/{file_name}', 'w') as file:
             json.dump(manifest, file)
-            
-        return f'{self.VERSION}/{file_name}'
+
+        return {
+            file_name: f'{self.VERSION}/{file_name}'
+        }
     
-    def create_update_manifest(self, name: str):
-        repo = os.getenv('GITHUB_REPOSITORY')
+    def create_update_manifest(self, name: str) -> dict:
+        repo = os.getenv('GITHUB_REPOSITORY', 'vitalvas/oneauth')
         manifest = {
             'name': name,
             'version': self.VERSION,
@@ -178,14 +180,16 @@ class Make:
         with open(f'build/{file_name}', 'w') as file:
             json.dump(manifest, file)
         
-        return file_name
+        return {
+            file_name: file_name
+        }
 
-    def upload_files(self, files: list):
+    def upload_files(self, files: list) -> None:
         print('Uploading files...')
         for file in files:
             self.upload_file(file)
 
-    def upload_file(self, file: str):
+    def upload_file(self, file: str) -> None:
         repo = os.getenv('GITHUB_REPOSITORY')
         upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://vv-github-build-artifacts/{repo}/{file}']
 
@@ -206,7 +210,7 @@ class Make:
         if is_break:
             sys.exit(1)
 
-    def build(self, app_name: str):
+    def build(self, app_name: str) -> None:
         print('Building...')
         print(f'Version: {self.VERSION}')
         print(f'GOOS: {self.GOOS}, GOARCH: {self.GOARCH}')
