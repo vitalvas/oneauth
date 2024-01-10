@@ -138,7 +138,10 @@ class Make:
         with gzip.open(f'build/{file_name}', mode='wb', compresslevel=9) as file_gz:
             with open(f'build/{goos}/{goarch}/{name}', 'rb') as file_in:
                 shutil.copyfileobj(file_in, file_gz)
-        return file_name
+
+        return {
+            file_name: f'{self.VERSION}/{file_name}'
+        }
 
     def get_sha256(self, goos: str, goarch: str, name: str) -> str:
         with open(f'build/{goos}/{goarch}/{name}', 'rb') as file:
