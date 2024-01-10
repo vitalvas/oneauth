@@ -2,17 +2,21 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/vitalvas/oneauth/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
 func Load(filePath string) (*Config, error) {
+	socketPath, err := tools.InHomeDir(".oneauth", "ssh-agent.sock")
+	if err != nil {
+		return nil, err
+	}
+
 	conf := &Config{
 		Socket: Socket{
 			Type: "unix",
-			Path: filepath.Join(tools.GetHomeDir(), ".oneauth/ssh-agent.sock"),
+			Path: socketPath,
 		},
 	}
 

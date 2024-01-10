@@ -1,15 +1,27 @@
 package tools
 
 import (
-	"log"
+	"fmt"
 	"os"
+	"path/filepath"
 )
 
-func GetHomeDir() string {
+func GetHomeDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	return home
+	return home, nil
+}
+
+func InHomeDir(items ...string) (string, error) {
+	dir, err := GetHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	path := append([]string{dir}, items...)
+
+	return filepath.Join(path...), nil
 }
