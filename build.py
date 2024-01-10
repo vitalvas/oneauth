@@ -12,6 +12,7 @@ import time
 
 class Make:
     def __init__(self):
+        self.RELEASE = False
         self.VERSION = self._get_version()
         self._commit_id = os.getenv('GITHUB_SHA')
         self.GOOS = self._exec('go env GOOS')
@@ -47,6 +48,7 @@ class Make:
         # on create tag
         ref_name = os.getenv('GITHUB_REF_NAME')
         if ref_name and ref_name.startswith('v'):
+            self.RELEASE = True
             return ref_name
 
         run_id = os.getenv('GITHUB_RUN_ID')
@@ -126,6 +128,11 @@ class Make:
             self.create_manifest(name, goos, goarch)
         ]
         
+        _update_manifest = self.create_update_manifest(name)
+        ref_name = os.getenv('GITHUB_REF_NAME')
+        if ref_name and (self.ref_name == 'master' or ref_name.startswith('v')):
+            upload_files.append(_update_manifest)
+        
         return upload_files
 
     def create_archive(self, name: str, goos: str, goarch: str) -> str:
@@ -154,6 +161,24 @@ class Make:
             json.dump(manifest, file)
             
         return file_name
+    
+    def create_update_manifest(self, name: str):
+        repo = os.getenv('GITHUB_REPOSITORY')
+        manifest = {
+            'name': name,
+            'version': self.VERSION,
+            'remote_prefix': f'https://github-build-artifacts.vitalvas.dev/{repo}/',
+        }
+        
+        if self.RELEASE:
+            manifest['remote_prefix'] = 'https://oneauth-files.vitalvas.dev/release/'
+            
+        file_name = f'{name}_update_manifest.json'
+        
+        with open(f'build/{file_name}', 'w') as file:
+            json.dump(manifest, file)
+        
+        return file_name
 
     def upload_files(self, files: list):
         print('Uploading files...')
@@ -162,11 +187,12 @@ class Make:
 
     def upload_file(self, file: str):
         repo = os.getenv('GITHUB_REPOSITORY')
-        raw = subprocess.Popen(
-            ['aws', 's3', 'cp', f'build/{file}', f's3://vv-github-build-artifacts/{repo}/{self.VERSION}/{file}'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://vv-github-build-artifacts/{repo}/{self.VERSION}/{file}']
+
+        if self.RELEASE:
+            upload_cmd = ['aws', 's3', 'cp', f'build/{file}', f's3://oneauth-files.vitalvas.dev/release/{self.VERSION}/{file}']
+        
+        raw = subprocess.Popen(upload_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         raw.wait()
         
         for line in raw.stdout:
