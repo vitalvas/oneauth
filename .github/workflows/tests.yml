@@ -11,6 +11,8 @@ on:
       - '**.sh'
       - 'go.mod'
       - 'go.sum'
+      - 'build.py'
+      - '.github/workflows/tests.yml'
 
 permissions:
   id-token: write
