@@ -20,9 +20,10 @@ func Execute() {
 	}
 
 	app := &cli.App{
-		Name:    "oneauth",
-		Usage:   "OneAuth is a CLI tool to use unified authentication and authorization",
-		Version: buildinfo.Version,
+		Name:        "oneauth",
+		Usage:       "OneAuth is a CLI tool to use unified authentication and authorization",
+		Description: "Details: https://oneauth.vitalvas.dev",
+		Version:     buildinfo.Version,
 		Flags: []cli.Flag{
 			&cli.PathFlag{
 				Name:  "config",
@@ -34,6 +35,7 @@ func Execute() {
 			agentCmd,
 			infoCmd,
 			setupCmd,
+			serviceCmd,
 			yubikeyCmd,
 		},
 	}
