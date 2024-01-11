@@ -19,7 +19,7 @@ const serviceName = "dev.vitalvas.oneauth"
 //go:embed template/launchd.service
 var serviceTmpl string
 
-func ServiceInstall() error {
+func Install() error {
 	execPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
@@ -71,7 +71,7 @@ func ServiceInstall() error {
 	return nil
 }
 
-func ServiceUninstal() error {
+func Uninstal() error {
 	if err := checkService(); err == ErrNotInstalled {
 		return nil
 	}
@@ -96,7 +96,7 @@ func ServiceUninstal() error {
 	return nil
 }
 
-func ServiceRestart() error {
+func Restart() error {
 	if err := checkService(); err == ErrNotInstalled {
 		return nil
 	}

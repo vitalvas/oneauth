@@ -1,13 +1,13 @@
 package service
 
-func ServiceInstall() error {
+func Install() error {
 	return ErrNotImplemented
 }
 
-func ServiceUninstal() error {
+func Uninstal() error {
 	return ErrNotImplemented
 }
 
-func ServiceRestart() error {
+func Restart() error {
 	return ErrNotImplemented
 }

@@ -11,7 +11,7 @@ var serviceDisableCmd = &cli.Command{
 	Name:  "disable",
 	Usage: "Disable the service",
 	Action: func(c *cli.Context) error {
-		if err := service.ServiceUninstal(); err != nil {
+		if err := service.Uninstal(); err != nil {
 			return err
 		}
 
