@@ -43,3 +43,44 @@ func TestSignEmptyRequest(t *testing.T) {
 		t.Errorf("Expected signature: Uxv59Quy2jOAJnXqbfK9TYwfrvY=, but got: %s", actualSigBase64)
 	}
 }
+
+func TestResponseFromBody(t *testing.T) {
+	input := []byte(`h=ZQTg6Vo/Ti7LFKi9x/K8te+9SKI=
+t=2024-01-12T03:13:22Z0504
+otp=cccccbhuinjdrvtgbgrbrcikvrtvulvltkdufcrngunn
+nonce=askjdnkajsndjkasndkjsnad
+sl=100
+timestamp=4272362
+sessioncounter=26
+sessionuse=3
+status=OK`)
+
+	resp, err := responseFromBody(input)
+
+	if err != nil {
+		t.Errorf("Expected no error, but got an error: %v", err)
+	}
+
+	expected := &VerifyResponse{
+		Timestamp:      4272362,
+		SessionCounter: 26,
+		SessionUse:     3,
+		Status:         "OK",
+	}
+
+	if resp.Timestamp != expected.Timestamp {
+		t.Errorf("Expected Timestamp to be %d, but got %d", expected.Timestamp, resp.Timestamp)
+	}
+
+	if resp.SessionCounter != expected.SessionCounter {
+		t.Errorf("Expected SessionCounter to be %d, but got %d", expected.SessionCounter, resp.SessionCounter)
+	}
+
+	if resp.SessionUse != expected.SessionUse {
+		t.Errorf("Expected SessionUse to be %d, but got %d", expected.SessionUse, resp.SessionUse)
+	}
+
+	if resp.Status != expected.Status {
+		t.Errorf("Expected Status to be %s, but got %s", expected.Status, resp.Status)
+	}
+}

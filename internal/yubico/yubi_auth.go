@@ -147,10 +147,10 @@ func (y *YubiAuth) makeRequest(server string, params url.Values) (*VerifyRespons
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return y.responseFromBody(body)
+	return responseFromBody(body)
 }
 
-func (y *YubiAuth) responseFromBody(body []byte) (*VerifyResponse, error) {
+func responseFromBody(body []byte) (*VerifyResponse, error) {
 	buf := bytes.NewBuffer(body)
 
 	scanner := bufio.NewScanner(buf)
