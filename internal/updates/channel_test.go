@@ -44,3 +44,24 @@ func TestGetChannel(t *testing.T) {
 		})
 	}
 }
+
+func TestGetChannelName(t *testing.T) {
+	tests := []struct {
+		version  string
+		expected string
+	}{
+		{"v0.0.1", "dev"},
+		{"v0.0.1111111", "dev"},
+		{"v0.1.0", "prod"},
+		{"v1.0.0", "prod"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.version, func(t *testing.T) {
+			result := GetChannelName(test.version)
+			if result != test.expected {
+				t.Errorf("Expected GetChannelName(%s) to return '%s', but got '%s'", test.version, test.expected, result)
+			}
+		})
+	}
+}

@@ -20,3 +20,16 @@ func getChannel(version string) Channel {
 
 	return ChannelDev
 }
+
+func GetChannelName(version string) string {
+	switch getChannel(version) {
+	case ChannelDev:
+		return "dev"
+
+	case ChannelProd:
+		return "prod"
+
+	default:
+		return "unknown"
+	}
+}

@@ -22,7 +22,10 @@ var updateCmd = &cli.Command{
 			return fmt.Errorf("failed to check for updates: %w", err)
 		}
 
-		fmt.Printf("New version available: (current: %s) %s\n", buildinfo.Version, manifest.Version)
+		fmt.Printf(
+			"New version available: (current: %s; channel: %s) %s\n",
+			buildinfo.Version, updates.GetChannelName(buildinfo.Version), manifest.Version,
+		)
 
 		return nil
 	},
