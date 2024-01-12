@@ -53,7 +53,9 @@ sl=100
 timestamp=4272362
 sessioncounter=26
 sessionuse=3
-status=OK`)
+status=OK
+wrong
+`)
 
 	resp, err := responseFromBody(input)
 
