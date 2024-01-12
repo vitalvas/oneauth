@@ -3,12 +3,14 @@ module github.com/vitalvas/oneauth
 go 1.21
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-piv/piv-go v1.11.0
 	github.com/urfave/cli/v2 v2.27.1
 	github.com/vitalvas/gokit v0.8.0
 	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/crypto v0.17.0
+	golang.org/x/mod v0.8.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.16.0
 	golang.org/x/term v0.16.0

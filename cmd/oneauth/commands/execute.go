@@ -37,6 +37,7 @@ func Execute() {
 			setupCmd,
 			serviceCmd,
 			yubikeyCmd,
+			updateCmd,
 		},
 	}
 
