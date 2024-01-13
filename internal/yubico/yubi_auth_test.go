@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"testing"
 )
@@ -84,5 +85,46 @@ wrong
 
 	if resp.Status != expected.Status {
 		t.Errorf("Expected Status to be %s, but got %s", expected.Status, resp.Status)
+	}
+}
+
+func TestGetRequestParams(t *testing.T) {
+
+	tests := []struct {
+		clientID int
+		otp      string
+	}{
+		{clientID: 123, otp: "cccccbhuinjdrvtgbgrbrcikvrtvulvltkdufcrngunn"},
+		{clientID: 456, otp: "cccccbhuinjdrvtgbgrbrcikvrtvulvltkdufcrngunn"},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("clientID=%d otp=%s", test.clientID, test.otp), func(t *testing.T) {
+			params, err := getRequestParams(test.clientID, test.otp)
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			// Check individual values
+			if gotID := params.Get("id"); gotID != fmt.Sprintf("%d", test.clientID) {
+				t.Errorf("Expected id=%s, got id=%s", fmt.Sprintf("%d", test.clientID), gotID)
+			}
+			if gotOTP := params.Get("otp"); gotOTP != test.otp {
+				t.Errorf("Expected otp=%s, got otp=%s", test.otp, gotOTP)
+			}
+			if gotNonce := params.Get("nonce"); len(gotNonce) != 32 {
+				t.Errorf("Expected nonce size 32, got %d", len(gotNonce))
+			}
+			if gotTimestamp := params.Get("timestamp"); gotTimestamp != "1" {
+				t.Errorf("Expected timestamp=1, got timestamp=%s", gotTimestamp)
+			}
+			if gotSL := params.Get("sl"); gotSL != "secure" {
+				t.Errorf("Expected sl=secure, got sl=%s", gotSL)
+			}
+			if gotTimeout := params.Get("timeout"); gotTimeout != "2" {
+				t.Errorf("Expected timeout=2, got timeout=%s", gotTimeout)
+			}
+		})
 	}
 }

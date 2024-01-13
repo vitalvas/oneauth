@@ -74,18 +74,9 @@ func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
 		return nil, fmt.Errorf("failed to validate otp: %w", err)
 	}
 
-	nonce, err := tools.GenerateNonce(32)
+	params, err := getRequestParams(y.clientID, otp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate nonce: %w", err)
-	}
-
-	params := url.Values{
-		"id":        {fmt.Sprintf("%d", y.clientID)},
-		"otp":       {otp},
-		"nonce":     {nonce},
-		"timestamp": {"1"},
-		"sl":        {"secure"},
-		"timeout":   {"2"},
+		return nil, fmt.Errorf("failed to get request params: %w", err)
 	}
 
 	if y.clientSecret != nil {
@@ -148,6 +139,22 @@ func (y *YubiAuth) makeRequest(server string, params url.Values) (*VerifyRespons
 	}
 
 	return responseFromBody(body)
+}
+
+func getRequestParams(clientID int, otp string) (url.Values, error) {
+	nonce, err := tools.GenerateNonce(32)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	return url.Values{
+		"id":        {fmt.Sprintf("%d", clientID)},
+		"otp":       {otp},
+		"nonce":     {nonce},
+		"timestamp": {"1"},
+		"sl":        {"secure"},
+		"timeout":   {"2"},
+	}, nil
 }
 
 func responseFromBody(body []byte) (*VerifyResponse, error) {
