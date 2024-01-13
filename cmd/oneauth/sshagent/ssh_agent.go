@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-piv/piv-go/piv"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -52,7 +53,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	fp := ssh.FingerprintSHA256(reqKey)
+	fp := tools.SSHFingerprint(reqKey)
 
 	keys, err := a.yk.ListKeys(yubikey.AllSlots...)
 	if err != nil {
@@ -65,7 +66,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 			return nil, fmt.Errorf("failed to create ssh public key for sing: %w", err)
 		}
 
-		if fp != ssh.FingerprintSHA256(sshPublicKey) {
+		if fp != tools.SSHFingerprint(sshPublicKey) {
 			continue
 		}
 
