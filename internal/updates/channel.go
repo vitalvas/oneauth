@@ -22,14 +22,9 @@ func getChannel(version string) Channel {
 }
 
 func GetChannelName(version string) string {
-	switch getChannel(version) {
-	case ChannelDev:
-		return "dev"
-
-	case ChannelProd:
+	if getChannel(version) == ChannelProd {
 		return "prod"
-
-	default:
-		return "unknown"
 	}
+
+	return "dev"
 }

@@ -33,6 +33,7 @@ func TestGetChannel(t *testing.T) {
 		{"v0.1.0", ChannelProd},
 		{"v1.0.0", ChannelProd},
 		{"v2.1.3", ChannelProd},
+		{"xxx", ChannelDev},
 	}
 
 	for _, test := range tests {
