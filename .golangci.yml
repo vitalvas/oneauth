@@ -29,3 +29,5 @@ linters-settings:
       - G102
       - G402
       - G505
+  dogsled:
+    max-blank-identifiers: 5
