@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"runtime"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -56,7 +55,7 @@ func getRemoteManifest(appName, remote string) (*UpdateManifest, error) {
 
 	req.Header.Set("User-Agent", fmt.Sprintf(
 		"Mozilla/5.0 (compatible; %s/%s; os/%s; arch/%s)",
-		appName, buildinfo.Version, runtime.GOOS, runtime.GOARCH,
+		appName, buildinfo.Version, buildinfo.OS, buildinfo.ARCH,
 	))
 
 	resp, err := httpClient.Do(req)
