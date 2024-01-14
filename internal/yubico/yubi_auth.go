@@ -37,13 +37,14 @@ var (
 		StatusOperationNotAllowed,
 		StatusNoSuchClient,
 	}
+	httpClient = &http.Client{
+		Timeout: 3 * time.Second,
+	}
 )
 
 type YubiAuth struct {
 	clientID     int
 	clientSecret []byte
-
-	httpClient *http.Client
 }
 
 type VerifyResponse struct {
@@ -78,10 +79,6 @@ func NewYubiAuth(clientID int, clientSecret string) (*YubiAuth, error) {
 	return &YubiAuth{
 		clientID:     clientID,
 		clientSecret: keyBytes,
-
-		httpClient: &http.Client{
-			Timeout: 5 * time.Second,
-		},
 	}, nil
 }
 
@@ -113,7 +110,7 @@ func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
 
 func (y *YubiAuth) getVerify(params url.Values) (*VerifyResponse, error) {
 	for _, server := range getVerifyServers() {
-		resp, err := y.makeRequest(server, params)
+		resp, err := makeRequest(server, params)
 		if err != nil {
 			log.Println(err)
 		} else if !slices.Contains(serverErrorCodes, resp.Status) {
@@ -124,7 +121,7 @@ func (y *YubiAuth) getVerify(params url.Values) (*VerifyResponse, error) {
 	return nil, fmt.Errorf("failed to make request to all yubico servers")
 }
 
-func (y *YubiAuth) makeRequest(server string, params url.Values) (*VerifyResponse, error) {
+func makeRequest(server string, params url.Values) (*VerifyResponse, error) {
 	remote, err := url.Parse(server)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse server URL: %w", err)
@@ -139,7 +136,7 @@ func (y *YubiAuth) makeRequest(server string, params url.Values) (*VerifyRespons
 
 	req.Header.Set("User-Agent", cloudUserAgent)
 
-	resp, err := y.httpClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
