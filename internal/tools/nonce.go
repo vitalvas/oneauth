@@ -7,7 +7,7 @@ import (
 
 const nonceAllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-func GenerateNonce(length int) (string, error) {
+func GenerateNonce(length uint) (string, error) {
 	nonce := make([]byte, length)
 
 	size := len(nonceAllowedChars)
