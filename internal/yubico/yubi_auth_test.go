@@ -233,10 +233,8 @@ func TestMakeRequest(t *testing.T) {
 
 		if response == nil {
 			t.Errorf("Expected a non-nil response")
-		} else {
-			if response.Timestamp != expectedResponse.Timestamp {
-				t.Errorf("Expected response: %v, but got: %v", expectedResponse, response)
-			}
+		} else if response.Timestamp != expectedResponse.Timestamp {
+			t.Errorf("Expected response: %v, but got: %v", expectedResponse, response)
 		}
 	})
 
