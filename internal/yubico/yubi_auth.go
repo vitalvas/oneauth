@@ -56,16 +56,19 @@ type VerifyResponse struct {
 }
 
 func getVerifyServers(locals ...string) []string {
-	servers := yubiCloudServers
+	var servers []string
+	servers = append(servers, yubiCloudServers...)
 
 	if len(locals) > 0 {
 		servers = locals
 	}
 
 	// allways shuffle servers for load balancing
-	rand.Shuffle(len(servers), func(i, j int) {
-		servers[i], servers[j] = servers[j], servers[i]
-	})
+	for iter := 0; iter < len(servers); iter++ {
+		rand.Shuffle(len(servers), func(i, j int) {
+			servers[i], servers[j] = servers[j], servers[i]
+		})
+	}
 
 	return servers
 }

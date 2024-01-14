@@ -134,16 +134,13 @@ func TestGetRequestParams(t *testing.T) {
 
 func TestGetVerifyServers(t *testing.T) {
 	t.Run("NoLocal-NoShuffled", func(t *testing.T) {
-		servers := make([]string, len(yubiCloudServers))
-		copy(servers, yubiCloudServers)
-
 		result := getVerifyServers()
 
-		if len(result) != len(servers) {
-			t.Errorf("Expected %d servers, but got %d", len(servers), len(result))
+		if len(result) != len(yubiCloudServers) {
+			t.Errorf("Expected %d servers, but got %d", len(yubiCloudServers), len(result))
 		}
 
-		if reflect.DeepEqual(servers, result) {
+		if reflect.DeepEqual(yubiCloudServers, result) {
 			t.Errorf("Expected servers to be shuffled, but got %v", result)
 		}
 	})
