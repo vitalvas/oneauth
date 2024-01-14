@@ -15,16 +15,20 @@ var (
 	}
 )
 
+func getUserAget(appName string) string {
+	return fmt.Sprintf(
+		"Mozilla/5.0 (compatible; %s/%s; os/%s; arch/%s)",
+		appName, buildinfo.Version, buildinfo.OS, buildinfo.ARCH,
+	)
+}
+
 func getJSON(appName, remote string, v interface{}) error {
 	req, err := http.NewRequest(http.MethodGet, remote, nil)
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("User-Agent", fmt.Sprintf(
-		"Mozilla/5.0 (compatible; %s/%s; os/%s; arch/%s)",
-		appName, buildinfo.Version, buildinfo.OS, buildinfo.ARCH,
-	))
+	req.Header.Set("User-Agent", getUserAget(appName))
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
