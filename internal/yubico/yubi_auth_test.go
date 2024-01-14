@@ -156,3 +156,52 @@ func TestGetVerifyServers(t *testing.T) {
 		}
 	})
 }
+
+func TestNewYubiAuth(t *testing.T) {
+	tests := []struct {
+		clientID      int
+		clientSecret  string
+		expectedError bool
+		expectedAuth  *YubiAuth
+	}{
+		{
+			clientID:      12345,
+			clientSecret:  "c2VjcmV0c2VjcmV0c2VjcmV0c2VjcmV0c2VjcmV0c2VjcmV0c2U=",
+			expectedError: false,
+			expectedAuth: &YubiAuth{
+				clientID:     12345,
+				clientSecret: []byte("secretsecretsecretsecretsecretsecretse"),
+			},
+		},
+		{
+			clientID:      54321,
+			clientSecret:  "invalid_base64_string",
+			expectedError: true,
+			expectedAuth:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("ClientID: %d, ClientSecret: %s", test.clientID, test.clientSecret), func(t *testing.T) {
+			auth, err := NewYubiAuth(test.clientID, test.clientSecret)
+
+			if err != nil {
+				if !test.expectedError {
+					t.Errorf("Expected no error, but got: %v", err)
+				}
+			} else {
+				if test.expectedError {
+					t.Error("Expected error, but got nil")
+				}
+
+				if auth.clientID != test.expectedAuth.clientID {
+					t.Errorf("Expected clientID to be %d, but got %d", test.expectedAuth.clientID, auth.clientID)
+				}
+
+				if string(auth.clientSecret) != string(test.expectedAuth.clientSecret) {
+					t.Errorf("Expected clientSecret to be '%s', but got '%s'", string(test.expectedAuth.clientSecret), string(auth.clientSecret))
+				}
+			}
+		})
+	}
+}
