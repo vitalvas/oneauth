@@ -1,15 +1,11 @@
 package updates
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/vitalvas/oneauth/internal/buildinfo"
 )
 
 type UpdateManifest struct {
@@ -21,10 +17,6 @@ type UpdateManifest struct {
 var (
 	ErrSchemeNotHTTPS    = errors.New("scheme is not HTTPS")
 	ErrNoUpdateAvailable = errors.New("no update available")
-
-	httpClient = &http.Client{
-		Timeout: 10 * time.Second,
-	}
 )
 
 func getUpdateManifestURL(appName string, channel Channel) (string, error) {
@@ -48,37 +40,16 @@ func getUpdateManifestURL(appName string, channel Channel) (string, error) {
 }
 
 func getRemoteManifest(appName, remote string) (*UpdateManifest, error) {
-	req, err := http.NewRequest(http.MethodGet, remote, nil)
-	if err != nil {
+	manifest := &UpdateManifest{}
+
+	if err := getJSON(appName, remote, &manifest); err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", fmt.Sprintf(
-		"Mozilla/5.0 (compatible; %s/%s; os/%s; arch/%s)",
-		appName, buildinfo.Version, buildinfo.OS, buildinfo.ARCH,
-	))
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	data := &UpdateManifest{}
-
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return manifest, nil
 }
 
-func Check(appName string, version string) (*UpdateManifest, error) {
+func Check(appName, version string) (*UpdateManifest, error) {
 	channel := getChannel(version)
 
 	localVersion, err := checkVersion(version)

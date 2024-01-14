@@ -22,6 +22,15 @@ var updateCmd = &cli.Command{
 			return fmt.Errorf("failed to check for updates: %w", err)
 		}
 
+		versionManifest, err := updates.CheckVersion("oneauth", manifest.RemotePrefix)
+		if err != nil {
+			return fmt.Errorf("failed to get version manifest: %w", err)
+		}
+
+		if versionManifest.Version != manifest.Version {
+			return fmt.Errorf("update version mismatch: %s != %s", versionManifest.Version, manifest.Version)
+		}
+
 		fmt.Printf(
 			"New version available: (current: %s; channel: %s) %s\n",
 			buildinfo.Version, updates.GetChannelName(buildinfo.Version), manifest.Version,
