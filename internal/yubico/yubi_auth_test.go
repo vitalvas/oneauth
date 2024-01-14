@@ -5,6 +5,8 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
@@ -204,4 +206,69 @@ func TestNewYubiAuth(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMakeRequest(t *testing.T) {
+	// Mock HTTP server for testing
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`timestamp=2`))
+	}))
+
+	defer server.Close()
+
+	t.Run("SuccessfulRequest", func(t *testing.T) {
+		params := url.Values{}
+		params.Add("param1", "value1")
+
+		response, err := makeRequest(server.URL, params)
+
+		if err != nil {
+			t.Errorf("Expected no error, but got: %v", err)
+		}
+
+		expectedResponse := &VerifyResponse{
+			Timestamp: 2,
+		}
+
+		if response == nil {
+			t.Errorf("Expected a non-nil response")
+		} else {
+			if response.Timestamp != expectedResponse.Timestamp {
+				t.Errorf("Expected response: %v, but got: %v", expectedResponse, response)
+			}
+		}
+	})
+
+	t.Run("FailedParseServerURL", func(t *testing.T) {
+		_, err := makeRequest("invalid-url", nil)
+
+		if err == nil {
+			t.Errorf("Expected an error, but got nil")
+		}
+	})
+
+	t.Run("FailedCreateRequest", func(t *testing.T) {
+		// Mocking a URL that cannot be reached
+		invalidServer := "http://invalid-server"
+		_, err := makeRequest(invalidServer, nil)
+
+		if err == nil {
+			t.Errorf("Expected an error, but got nil")
+		}
+	})
+
+	t.Run("FailedStatusCode", func(t *testing.T) {
+		// Mocking a server that returns a non-OK status code
+		badStatusServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer badStatusServer.Close()
+
+		_, err := makeRequest(badStatusServer.URL, nil)
+
+		if err == nil {
+			t.Errorf("Expected an error, but got nil")
+		}
+	})
 }
