@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"reflect"
 	"testing"
 )
 
@@ -127,4 +128,31 @@ func TestGetRequestParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetVerifyServers(t *testing.T) {
+	t.Run("NoLocal-NoShuffled", func(t *testing.T) {
+		servers := make([]string, len(yubiCloudServers))
+		copy(servers, yubiCloudServers)
+
+		result := getVerifyServers()
+
+		if len(result) != len(servers) {
+			t.Errorf("Expected %d servers, but got %d", len(servers), len(result))
+		}
+
+		if reflect.DeepEqual(servers, result) {
+			t.Errorf("Expected servers to be shuffled, but got %v", result)
+		}
+	})
+
+	// Test when locals are provided.
+	t.Run("LocalsProvided", func(t *testing.T) {
+		locals := []string{"local1", "local2"}
+		result := getVerifyServers(locals...)
+
+		if !reflect.DeepEqual(locals, result) {
+			t.Errorf("Expected %v, but got %v", locals, result)
+		}
+	})
 }

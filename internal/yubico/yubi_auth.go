@@ -19,6 +19,10 @@ import (
 	"github.com/vitalvas/oneauth/internal/tools"
 )
 
+const (
+	cloudUserAgent = "Mozilla/5.0 (compatible; OneAuthServer/1.0; +https://oneauth.vitalvas.dev)"
+)
+
 var (
 	yubiCloudServers = []string{
 		"https://api.yubico.com/wsapi/2.0/verify",
@@ -50,13 +54,26 @@ type VerifyResponse struct {
 	Status         string
 }
 
+func getVerifyServers(locals ...string) []string {
+	servers := yubiCloudServers
+
+	if len(locals) > 0 {
+		servers = locals
+	}
+
+	// allways shuffle servers for load balancing
+	rand.Shuffle(len(servers), func(i, j int) {
+		servers[i], servers[j] = servers[j], servers[i]
+	})
+
+	return servers
+}
+
 func NewYubiAuth(clientID int, clientSecret string) (*YubiAuth, error) {
 	keyBytes, err := base64.StdEncoding.DecodeString(clientSecret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode client secret: %w", err)
 	}
-
-	rand.Shuffle(len(yubiCloudServers), func(i, j int) { yubiCloudServers[i], yubiCloudServers[j] = yubiCloudServers[j], yubiCloudServers[i] })
 
 	return &YubiAuth{
 		clientID:     clientID,
@@ -95,7 +112,7 @@ func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
 }
 
 func (y *YubiAuth) getVerify(params url.Values) (*VerifyResponse, error) {
-	for _, server := range yubiCloudServers {
+	for _, server := range getVerifyServers() {
 		resp, err := y.makeRequest(server, params)
 		if err != nil {
 			log.Println(err)
@@ -120,7 +137,7 @@ func (y *YubiAuth) makeRequest(server string, params url.Values) (*VerifyRespons
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; OneAuthServer/1.0; +https://oneauth.vitalvas.dev)")
+	req.Header.Set("User-Agent", cloudUserAgent)
 
 	resp, err := y.httpClient.Do(req)
 	if err != nil {
