@@ -19,6 +19,10 @@ func TestGetHomeDir(t *testing.T) {
 	if home != os.Getenv("HOME") {
 		t.Fatal("home directory is not equal to $HOME")
 	}
+
+	if err != nil && home != "" {
+		t.Error("error is not nil but home directory is not empty")
+	}
 }
 
 func TestInHomeDir(t *testing.T) {
@@ -34,5 +38,9 @@ func TestInHomeDir(t *testing.T) {
 
 	if path != filepath.Join(home, "test") {
 		t.Fatal("path is not equal to home directory + /test")
+	}
+
+	if err != nil && path != "" {
+		t.Error("error is not nil but path is not empty")
 	}
 }
