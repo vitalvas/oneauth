@@ -214,19 +214,20 @@ var setupCmd = &cli.Command{
 			fmt.Println("Skipping insecure keys generation")
 		}
 
-		configPath := c.Path("config")
-		fmt.Println("Writing config file", configPath)
+		if configPath := c.Path("config"); configPath != "" {
+			fmt.Println("Writing config file", configPath)
 
-		conf := &config.Config{
-			Keyring: config.Keyring{
-				Yubikey: config.KeyringYubikey{
-					Serial: serial,
+			conf := &config.Config{
+				Keyring: config.Keyring{
+					Yubikey: config.KeyringYubikey{
+						Serial: serial,
+					},
 				},
-			},
-		}
+			}
 
-		if err := writeConfigFile(conf, configPath); err != nil {
-			return err
+			if err := writeConfigFile(conf, configPath); err != nil {
+				return err
+			}
 		}
 
 		fmt.Println("Done")
