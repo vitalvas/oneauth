@@ -3,12 +3,12 @@ package config
 import (
 	"os"
 
-	"github.com/vitalvas/oneauth/internal/tools"
+	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
 	"gopkg.in/yaml.v3"
 )
 
 func Load(filePath string) (*Config, error) {
-	socketPath, err := tools.InHomeDir(".oneauth", "ssh-agent.sock")
+	socketPath, err := paths.AgentSocket()
 	if err != nil {
 		return nil, err
 	}

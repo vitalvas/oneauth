@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/vitalvas/oneauth/internal/tools"
+	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
 )
 
 const serviceName = "dev.vitalvas.oneauth"
@@ -25,7 +25,7 @@ func Install() error {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
 
-	appHomeDir, err := tools.InHomeDir(".oneauth", "bin")
+	appHomeDir, err := paths.BinDir()
 	if err != nil {
 		return fmt.Errorf("failed to get app home directory: %w", err)
 	}
@@ -34,7 +34,7 @@ func Install() error {
 		return errors.New("service can be installed only from app home directory")
 	}
 
-	servicePath, err := getServicePath()
+	servicePath, err := paths.ServiceFile(serviceName)
 	if err != nil {
 		return fmt.Errorf("failed to get service path: %w", err)
 	}
@@ -76,7 +76,7 @@ func Uninstal() error {
 		return nil
 	}
 
-	servicePath, err := getServicePath()
+	servicePath, err := paths.ServiceFile(serviceName)
 	if err != nil {
 		return fmt.Errorf("failed to get service path: %w", err)
 	}
@@ -141,10 +141,6 @@ func callLaunchCtl(args ...string) (string, error) {
 	}
 
 	return stdout.String(), nil
-}
-
-func getServicePath() (string, error) {
-	return tools.InHomeDir("Library", "LaunchAgents", fmt.Sprintf("%s.plist", serviceName))
 }
 
 func writeServiceTemplate(exePath string, serviceFile *os.File) error {

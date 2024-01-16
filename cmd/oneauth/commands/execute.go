@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/tools"
 )
@@ -14,7 +15,7 @@ func Execute() {
 		log.Fatal("oneauth client must not be run as root")
 	}
 
-	configPath, err := tools.InHomeDir(".oneauth", "config.yaml")
+	configPath, err := paths.Config()
 	if err != nil {
 		log.Fatal(err)
 	}
