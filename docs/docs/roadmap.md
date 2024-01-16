@@ -4,7 +4,7 @@
 
 * [ ] Self update
     * [x] Check for new version
-    * [ ] Download and new version
+    * [ ] Download and install new version
     * [ ] Periodic check for new version and notify user
 * [x] Config file
 * [ ] Using PIN policy
@@ -76,6 +76,10 @@ Usage: give access to server for robots (CI/CD, backup, automation,...)
 * [ ] CA Server (PKI)
 * [ ] Serve setup profiles for clients
 * [x] OTP Validation Server
+    * [ ] Validate user key ownership
+    * [x] Validate OTP
+    * [x] Validate OTP with YubiCloud
+    * [ ] Audit log
 * [ ] User directory
     * [ ] User management
     * [ ] Sync from external directory (LDAP, Active Directory, scripts, ...)
