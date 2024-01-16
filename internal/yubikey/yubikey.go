@@ -57,7 +57,6 @@ func Open(card Card) (*Yubikey, error) {
 			yk.Close()
 			return nil, fmt.Errorf("serial number mismatch %d, got %d", card.Serial, serial)
 		}
-
 	}
 
 	return &Yubikey{
@@ -74,7 +73,37 @@ func (y *Yubikey) Close() error {
 	return nil
 }
 
+func (y *Yubikey) reOpen() error {
+	if y.yk != nil {
+		if _, err := y.yk.Serial(); err == nil {
+			return nil
+		}
+	}
+
+	if y.yk != nil {
+		y.yk.Close()
+		y.yk = nil
+	}
+
+	yk, err := OpenBySerial(y.Serial)
+	if err != nil {
+		return err
+	}
+
+	if y.Serial != yk.Serial {
+		return fmt.Errorf("serial number mismatch %d, got %d", y.Serial, yk.Serial)
+	}
+
+	y.yk = yk.yk
+
+	return nil
+}
+
 func (y *Yubikey) ResetToDefault() error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	if err := y.yk.Reset(); err != nil {
 		return err
 	}
@@ -101,6 +130,10 @@ func (y *Yubikey) ResetToDefault() error {
 }
 
 func (y *Yubikey) Reset(newPIN, newPUK string) error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	if err := y.yk.Reset(); err != nil {
 		return err
 	}
@@ -121,6 +154,10 @@ func (y *Yubikey) Reset(newPIN, newPUK string) error {
 }
 
 func (y *Yubikey) ResetMngmtKey(newKey [24]byte) error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	if err := y.yk.SetManagementKey(piv.DefaultManagementKey, newKey); err != nil {
 		return err
 	}
@@ -137,6 +174,10 @@ func (y *Yubikey) ResetMngmtKey(newKey [24]byte) error {
 }
 
 func (y *Yubikey) ListKeys(slots ...Slot) ([]Cert, error) {
+	if err := y.reOpen(); err != nil {
+		return nil, err
+	}
+
 	if len(slots) == 0 {
 		slots = AllSlots
 	}
@@ -180,26 +221,53 @@ func (y *Yubikey) getManagementKey(pin string) ([24]byte, error) {
 }
 
 func (y *Yubikey) PrivateKey(slot piv.Slot, public crypto.PublicKey, auth piv.KeyAuth) (crypto.PrivateKey, error) {
+	if err := y.reOpen(); err != nil {
+		return nil, err
+	}
+
 	return y.yk.PrivateKey(slot, public, auth)
 }
 
 func (y *Yubikey) Retries() (int, error) {
+	if err := y.reOpen(); err != nil {
+		return 0, err
+	}
+
 	return y.yk.Retries()
 }
 
 func (y *Yubikey) VerifyPIN(pin string) error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	return y.yk.VerifyPIN(pin)
 }
 
 func (y *Yubikey) SetPIN(currentPIN, newPIN string) error {
-	y.yk.Retries()
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
+	if _, err := y.yk.Retries(); err != nil {
+		return err
+	}
+
 	return y.yk.SetPIN(currentPIN, newPIN)
 }
 
 func (y *Yubikey) SetPUK(currentPUK, newPUK string) error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	return y.yk.SetPUK(currentPUK, newPUK)
 }
 
 func (y *Yubikey) Unblock(pukCode, newPIN string) error {
+	if err := y.reOpen(); err != nil {
+		return err
+	}
+
 	return y.yk.Unblock(pukCode, newPIN)
 }
