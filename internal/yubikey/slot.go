@@ -38,6 +38,10 @@ type Slot struct {
 	PIVSlot piv.Slot
 }
 
+func (s Slot) String() string {
+	return s.PIVSlot.String()
+}
+
 func MustSlotFromKeyID(keyID uint32) Slot {
 	slot, err := SlotFromKeyID(keyID)
 	if err != nil {
