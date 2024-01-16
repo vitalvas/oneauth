@@ -18,10 +18,7 @@ func TestFastHash(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Input: %s", test.input), func(t *testing.T) {
-			result, err := FastHash(test.input)
-			if err != nil {
-				t.Fatalf("Error occurred: %v", err)
-			}
+			result := FastHash(test.input)
 
 			if result != test.expected {
 				t.Errorf("Expected: %s, Got: %s", test.expected, result)
