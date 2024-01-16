@@ -146,6 +146,6 @@ Counting on what they can:
 * control access to the bastion
 * control access from the bastion to the target host (and to end hosts bypassing bastion)
 * monitoring and session logging
-* implement MFA (FIDO2? -> hardware token, PUSH? -> DUO, ...)
+* implement MFA (FIDO2? -> hardware token, PUSH? -> DUO, ..., TOPT? -> Google Authenticator, ...)
 
 This is an additional measure to a correct authentication method, and not a replacement for it.
