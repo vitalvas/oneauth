@@ -176,15 +176,18 @@ var setupCmd = &cli.Command{
 				})
 			}
 
-			var eccAlgo piv.Algorithm
-
 			if eccBits := c.Uint64("ecc-bits"); eccBits != 0 {
+				var eccAlgo piv.Algorithm
+
 				switch eccBits {
 				case 256:
 					eccAlgo = piv.AlgorithmEC256
 
 				case 384:
 					eccAlgo = piv.AlgorithmEC384
+
+				default:
+					eccAlgo = piv.AlgorithmEC256
 				}
 
 				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
