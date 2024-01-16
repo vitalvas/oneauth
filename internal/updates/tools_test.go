@@ -2,10 +2,10 @@ package updates
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/vitalvas/oneauth/internal/buildinfo"
@@ -38,25 +38,63 @@ func TestGetJSON(t *testing.T) {
 			return
 		}
 
-		json.NewEncoder(w).Encode(map[string]interface{}{"key": "value"})
+		switch r.URL.Path {
+		case "/success":
+			json.NewEncoder(w).Encode(map[string]interface{}{"key": "value"})
+
+		case "/notfound":
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+		case "/forbidden":
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+
+		default:
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 	}))
 
 	defer server.Close()
 
-	var responseData map[string]interface{}
-	err := getJSON("TestApp", server.URL, &responseData)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
+	testCases := []struct {
+		description string
+		remote      string
+		expectedErr error
+	}{
+		{
+			description: "Successful response",
+			remote:      server.URL + "/success",
+			expectedErr: nil,
+		},
+		{
+			description: "Not Found response",
+			remote:      server.URL + "/notfound",
+			expectedErr: ErrUpdateNotFound,
+		},
+		{
+			description: "Forbidden response",
+			remote:      server.URL + "/forbidden",
+			expectedErr: ErrUpdateForbidden,
+		},
+		{
+			description: "Unexpected status code",
+			remote:      server.URL + "/unknown",
+			expectedErr: errors.New("unexpected status code: 500"),
+		},
 	}
 
-	expectedData := map[string]interface{}{"key": "value"}
+	for _, test := range testCases {
+		t.Run(test.description, func(t *testing.T) {
+			var response map[string]interface{}
 
-	if !reflect.DeepEqual(responseData, expectedData) {
-		t.Errorf("Expected JSON data: %v, but got: %v", expectedData, responseData)
-	}
+			err := getJSON("TestApp", test.remote, &response)
 
-	err = getJSON("InvalidApp", server.URL, &responseData)
-	if err == nil {
-		t.Errorf("Expected an error, but got nil")
+			if err != nil && err.Error() != test.expectedErr.Error() {
+				t.Errorf("Expected error: '%v', but got: '%v'", test.expectedErr, err)
+			}
+
+			if err == nil && response == nil {
+				t.Errorf("Expected response to be not nil")
+			}
+		})
 	}
 }

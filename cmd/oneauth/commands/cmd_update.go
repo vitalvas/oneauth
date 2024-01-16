@@ -14,17 +14,38 @@ var updateCmd = &cli.Command{
 	Action: func(c *cli.Context) error {
 		manifest, err := updates.Check("oneauth", buildinfo.Version)
 		if err != nil {
-			if err == updates.ErrNoUpdateAvailable {
+			switch err {
+			case updates.ErrUpdateForbidden:
+				fmt.Println("Update forbidden")
+				return nil
+
+			case updates.ErrUpdateNotFound:
+				fmt.Println("No update found")
+				return nil
+
+			case updates.ErrNoUpdateAvailable:
 				fmt.Println("No update available")
 				return nil
-			}
 
-			return fmt.Errorf("failed to check for updates: %w", err)
+			default:
+				return fmt.Errorf("failed to check for updates: %w", err)
+			}
 		}
 
 		versionManifest, err := updates.CheckVersion("oneauth", manifest.RemotePrefix)
 		if err != nil {
-			return fmt.Errorf("failed to get version manifest: %w", err)
+			switch err {
+			case updates.ErrUpdateForbidden:
+				fmt.Println("Update forbidden. Please update manually.")
+				return nil
+
+			case updates.ErrUpdateNotFound:
+				fmt.Println("No update found. Please update manually.")
+				return nil
+
+			default:
+				return fmt.Errorf("failed to check for updates: %w", err)
+			}
 		}
 
 		if versionManifest.Version != manifest.Version {

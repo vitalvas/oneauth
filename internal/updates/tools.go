@@ -13,6 +13,9 @@ var (
 	httpClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
+
+	ErrUpdateNotFound  = fmt.Errorf("update not found")
+	ErrUpdateForbidden = fmt.Errorf("update forbidden")
 )
 
 func getUserAget(appName string) string {
@@ -37,9 +40,17 @@ func getJSON(appName, remote string, v interface{}) error {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return json.NewDecoder(resp.Body).Decode(&v)
+
+	case http.StatusNotFound:
+		return ErrUpdateNotFound
+
+	case http.StatusForbidden:
+		return ErrUpdateForbidden
+
+	default:
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
-	return json.NewDecoder(resp.Body).Decode(&v)
 }
