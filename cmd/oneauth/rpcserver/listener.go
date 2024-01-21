@@ -7,9 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"time"
 )
 
-func (s *RPCServer) ListenAndServe(ctx context.Context, socketPath string) error {
+func (s *RPCServer) ListenAndServe(_ context.Context, socketPath string) error {
 	defer func() {
 		if _, err := os.Stat(socketPath); err == nil {
 			os.Remove(socketPath)
@@ -36,7 +37,8 @@ func (s *RPCServer) ListenAndServe(ctx context.Context, socketPath string) error
 	})
 
 	s.server = &http.Server{
-		Handler: mux,
+		Handler:           mux,
+		ReadHeaderTimeout: 2 * time.Second,
 	}
 
 	if err := s.server.Serve(listener); err != nil && err != http.ErrServerClosed {
