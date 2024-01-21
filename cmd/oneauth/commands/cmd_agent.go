@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/gokit/xcmd"
@@ -76,6 +77,12 @@ var agentCmd = &cli.Command{
 		group.Go(func() error {
 			err := xcmd.WaitInterrupted(ctx)
 			log.Println("shutting down agent")
+
+			go func() {
+				time.Sleep(10 * time.Second)
+				log.Println("shutdown timeout")
+				os.Exit(0)
+			}()
 
 			if agent != nil {
 				agent.Shutdown()
