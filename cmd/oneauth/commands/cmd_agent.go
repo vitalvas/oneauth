@@ -14,6 +14,7 @@ import (
 	"github.com/vitalvas/oneauth/cmd/oneauth/rpcserver"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
+	"github.com/vitalvas/oneauth/internal/logger"
 	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/sync/errgroup"
 )
@@ -42,6 +43,8 @@ var agentCmd = &cli.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 
+		log := logger.New(config.AgentLogPath)
+
 		if config.Keyring.Yubikey.Serial == 0 {
 			return fmt.Errorf("yubikey serial is required")
 		}
@@ -58,9 +61,9 @@ var agentCmd = &cli.Command{
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 
-			log.Println("opening yubikey:", config.Keyring.Yubikey.Serial)
+			log.WithField("yubikey", config.Keyring.Yubikey.Serial).Println("opening yubikey:", config.Keyring.Yubikey.Serial)
 
-			agent, err = sshagent.New(config.Keyring.Yubikey.Serial)
+			agent, err = sshagent.New(config.Keyring.Yubikey.Serial, log)
 			if err != nil {
 				return fmt.Errorf("failed to create agent: %w", err)
 			}
@@ -76,7 +79,7 @@ var agentCmd = &cli.Command{
 			return fmt.Errorf("socket type %s is not supported", config.Socket.Type)
 		}
 
-		rpcServer := rpcserver.New(agent)
+		rpcServer := rpcserver.New(agent, log)
 
 		group.Go(func() error {
 			return rpcServer.ListenAndServe(ctx, config.ControlSocketPath)

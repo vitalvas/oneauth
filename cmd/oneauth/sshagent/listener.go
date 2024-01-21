@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"time"
@@ -18,7 +17,7 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 		}
 	}()
 
-	log.Println("listening ssh-agent on", socketPath)
+	a.log.Println("listening ssh-agent on", socketPath)
 
 	var err error
 	a.agentListener, err = net.Listen("unix", socketPath)
@@ -47,7 +46,7 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 			}
 
 			if err, ok := err.(Temporary); ok && err.Temporary() {
-				log.Printf("temporary accept error: %v", err)
+				a.log.Printf("temporary accept error: %v", err)
 				time.Sleep(time.Second)
 				continue
 			}

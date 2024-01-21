@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
 	"gopkg.in/yaml.v3"
@@ -18,8 +20,14 @@ func Load(filePath string) (*Config, error) {
 		return nil, err
 	}
 
+	agentLogDir, err := paths.LogDir()
+	if err != nil {
+		return nil, err
+	}
+
 	conf := &Config{
 		ControlSocketPath: controlSocketPath,
+		AgentLogPath:      fmt.Sprintf("%s/agent_%d.log", agentLogDir, time.Now().Year()),
 		Socket: Socket{
 			Type: "unix",
 			Path: agentSocketPath,

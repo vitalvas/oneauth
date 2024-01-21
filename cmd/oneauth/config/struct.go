@@ -2,6 +2,7 @@ package config
 
 type Config struct {
 	ControlSocketPath string  `yaml:"control_socket_path,omitempty"`
+	AgentLogPath      string  `yaml:"agent_log_path,omitempty"`
 	Socket            Socket  `yaml:"socket,omitempty"`
 	Keyring           Keyring `yaml:"keyring,omitempty"`
 }

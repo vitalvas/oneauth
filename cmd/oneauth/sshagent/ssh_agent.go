@@ -3,7 +3,6 @@ package sshagent
 import (
 	"crypto/rand"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -63,7 +62,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 
 	dataHash := tools.FastHash(data)
 
-	log.Println("request to sign with yubikey:", a.yk.Serial, "payload:", dataHash)
+	a.log.Println("request to sign payload:", dataHash)
 
 	for _, key := range keys {
 		sshPublicKey, err := ssh.NewPublicKey(key.PublicKey)
@@ -80,7 +79,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 			return nil, fmt.Errorf("failed to sign: %w", err)
 		}
 
-		log.Println("signed with yubikey:", a.yk.Serial, "slot:", key.Slot.String(), "payload:", dataHash)
+		a.log.Println("signed with slot:", key.Slot.String(), "payload:", dataHash)
 
 		return sig, nil
 	}

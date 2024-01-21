@@ -2,10 +2,10 @@ package sshagent
 
 import (
 	"io"
-	"log"
 	"net"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/vitalvas/oneauth/internal/netutil"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh/agent"
@@ -17,17 +17,23 @@ type SSHAgent struct {
 	yk   *yubikey.Yubikey
 	lock sync.Mutex
 
+	log           *logrus.Entry
 	agentListener net.Listener
 }
 
-func New(serial uint32) (*SSHAgent, error) {
+func New(serial uint32, log *logrus.Logger) (*SSHAgent, error) {
 	yk, err := yubikey.OpenBySerial(serial)
 	if err != nil {
 		return nil, err
 	}
 
+	contextLogger := log.WithFields(logrus.Fields{
+		"yubikey": serial,
+	})
+
 	return &SSHAgent{
-		yk: yk,
+		yk:  yk,
+		log: contextLogger,
 	}, nil
 }
 
@@ -40,17 +46,17 @@ func (a *SSHAgent) handleConn(conn net.Conn) {
 
 	creds, err := netutil.UnixSocketCreds(conn)
 	if err != nil {
-		log.Println("failed to get unix socket creds:", err)
+		a.log.Warnln("failed to get unix socket creds:", err)
 		return
 	}
 
 	if err := netutil.CheckCreds(&creds); err != nil {
-		log.Println(err)
+		a.log.Warnln(err)
 		return
 	}
 
 	if err := agent.ServeAgent(a, conn); err != nil && err != io.EOF {
-		log.Println("Agent client connection ended with error:", err)
+		a.log.Println("Agent client connection ended with error:", err)
 	}
 }
 

@@ -3,7 +3,6 @@ package rpcserver
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -17,7 +16,7 @@ func (s *RPCServer) ListenAndServe(_ context.Context, socketPath string) error {
 		}
 	}()
 
-	log.Println("listening rpc on", socketPath)
+	s.log.Println("listening rpc on", socketPath)
 
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {

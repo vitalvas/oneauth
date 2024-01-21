@@ -19,3 +19,7 @@ func Config() (string, error) {
 func BinDir() (string, error) {
 	return tools.InHomeDir(oneauthDir, "bin")
 }
+
+func LogDir() (string, error) {
+	return tools.InHomeDir(oneauthDir, "log")
+}

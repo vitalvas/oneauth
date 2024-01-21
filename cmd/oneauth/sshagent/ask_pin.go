@@ -2,7 +2,6 @@ package sshagent
 
 import (
 	"errors"
-	"log"
 
 	"github.com/vitalvas/oneauth/internal/keyring"
 )
@@ -15,7 +14,7 @@ func (a *SSHAgent) askPINPrompt() (string, error) {
 	pin, err := keyring.Get(keyring.GetYubikeyAccount(a.yk.Serial, "pin"))
 
 	if err == nil {
-		log.Println("used PIN from keyring")
+		a.log.Println("used PIN from keyring")
 
 		return pin, nil
 	}

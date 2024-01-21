@@ -56,8 +56,19 @@ func TestBinDir(t *testing.T) {
 	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }
 
-func TestServiceFile(t *testing.T) {
+func TestLogDir(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
 
+	actual, err := LogDir()
+	assert.Nil(t, err, "Error getting log directory: %v", err)
+
+	expected := filepath.Join(home, oneauthDir, "log")
+
+	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
+}
+
+func TestServiceFile(t *testing.T) {
 	var (
 		correctDir string
 		name       = "oneauth"
@@ -68,6 +79,9 @@ func TestServiceFile(t *testing.T) {
 		correctDir = "Library/LaunchAgents/oneauth.plist"
 	case "linux":
 		correctDir = ".config/systemd/user/oneauth.service"
+
+	default:
+		t.Errorf("Unsupported OS: %s", runtime.GOOS)
 	}
 
 	path, err := ServiceFile(name)
