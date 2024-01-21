@@ -14,7 +14,7 @@ class Make:
     def __init__(self):
         self.RELEASE = False
         self.VERSION = self._get_version()
-        self._commit_id = os.getenv('GITHUB_SHA')
+        self._commit_id = self._get_commit_id()
         self.GOOS = self._exec('go env GOOS')
         self.GOARCH = self._exec('go env GOARCH')
         self.apps = [
@@ -61,6 +61,12 @@ class Make:
     def _exec(cmd: str) -> str:
         stream = os.popen(cmd)
         return stream.read().strip()
+
+    def _get_commit_id(self) -> str:
+        if os.getenv('GITHUB_SHA'):
+            return os.getenv('GITHUB_SHA')
+
+        return self._exec('git rev-parse HEAD')
 
     @staticmethod
     def clean():
