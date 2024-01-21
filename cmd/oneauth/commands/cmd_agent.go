@@ -11,6 +11,7 @@ import (
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -50,7 +51,7 @@ var agentCmd = &cli.Command{
 				os.Remove(config.Socket.Path)
 			}
 
-			if err := os.MkdirAll(filepath.Dir(config.Socket.Path), 0700); err != nil {
+			if err := tools.MkDir(filepath.Dir(config.Socket.Path), 0700); err != nil {
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 
