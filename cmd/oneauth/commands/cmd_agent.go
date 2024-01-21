@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -100,6 +101,27 @@ var agentCmd = &cli.Command{
 			}
 
 			return err
+		})
+
+		group.Go(func() error {
+			return xcmd.PeriodicRun(ctx, func(ctx context.Context) error {
+				for _, path := range []string{
+					config.Socket.Path,
+					config.ControlSocketPath,
+				} {
+					if stat, err := os.Stat(path); err == nil {
+						if stat.Mode() != 0600 {
+							log.Printf("fixing permissions on %s from %d", path, stat.Mode())
+
+							if err := os.Chmod(path, 0600); err != nil {
+								return err
+							}
+						}
+					}
+				}
+
+				return nil
+			}, time.Hour)
 		})
 
 		return group.Wait()
