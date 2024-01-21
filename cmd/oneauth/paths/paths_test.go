@@ -19,6 +19,17 @@ func TestAgentSocket(t *testing.T) {
 	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }
 
+func TestControlSocket(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
+
+	actual, err := ControlSocket()
+	assert.Nil(t, err, "Error getting control socket path: %v", err)
+
+	expected := filepath.Join(home, oneauthDir, "control.sock")
+	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
+}
+
 func TestConfig(t *testing.T) {
 	home, err := os.UserHomeDir()
 	assert.Nil(t, err, "Error getting user home directory: %v", err)

@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
+	"github.com/vitalvas/oneauth/cmd/oneauth/rpcserver"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/tools"
@@ -74,6 +75,12 @@ var agentCmd = &cli.Command{
 			return fmt.Errorf("socket type %s is not supported", config.Socket.Type)
 		}
 
+		rpcServer := rpcserver.New(agent)
+
+		group.Go(func() error {
+			return rpcServer.ListenAndServe(ctx, config.ControlSocketPath)
+		})
+
 		group.Go(func() error {
 			err := xcmd.WaitInterrupted(ctx)
 			log.Println("shutting down agent")
@@ -86,6 +93,10 @@ var agentCmd = &cli.Command{
 
 			if agent != nil {
 				agent.Shutdown()
+			}
+
+			if rpcServer != nil {
+				rpcServer.Shutdown()
 			}
 
 			return err

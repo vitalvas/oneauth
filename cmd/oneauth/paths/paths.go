@@ -8,6 +8,10 @@ func AgentSocket() (string, error) {
 	return tools.InHomeDir(oneauthDir, "ssh-agent.sock")
 }
 
+func ControlSocket() (string, error) {
+	return tools.InHomeDir(oneauthDir, "control.sock")
+}
+
 func Config() (string, error) {
 	return tools.InHomeDir(oneauthDir, "config.yaml")
 }

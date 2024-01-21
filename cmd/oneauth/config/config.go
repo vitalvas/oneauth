@@ -8,15 +8,21 @@ import (
 )
 
 func Load(filePath string) (*Config, error) {
-	socketPath, err := paths.AgentSocket()
+	agentSocketPath, err := paths.AgentSocket()
+	if err != nil {
+		return nil, err
+	}
+
+	controlSocketPath, err := paths.ControlSocket()
 	if err != nil {
 		return nil, err
 	}
 
 	conf := &Config{
+		ControlSocketPath: controlSocketPath,
 		Socket: Socket{
 			Type: "unix",
-			Path: socketPath,
+			Path: agentSocketPath,
 		},
 	}
 

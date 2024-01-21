@@ -1,8 +1,9 @@
 package config
 
 type Config struct {
-	Socket  Socket  `yaml:"socket,omitempty"`
-	Keyring Keyring `yaml:"keyring,omitempty"`
+	ControlSocketPath string  `yaml:"control_socket_path,omitempty"`
+	Socket            Socket  `yaml:"socket,omitempty"`
+	Keyring           Keyring `yaml:"keyring,omitempty"`
 }
 
 type Socket struct {
