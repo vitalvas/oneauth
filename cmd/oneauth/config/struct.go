@@ -13,7 +13,8 @@ type Socket struct {
 }
 
 type Keyring struct {
-	Yubikey KeyringYubikey `yaml:"yubikey,omitempty"`
+	Yubikey        KeyringYubikey `yaml:"yubikey,omitempty"`
+	BeforeSignHook string         `yaml:"before_sign_hook,omitempty"`
 }
 
 type KeyringYubikey struct {

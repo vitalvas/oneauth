@@ -17,11 +17,16 @@ type SSHAgent struct {
 	yk   *yubikey.Yubikey
 	lock sync.Mutex
 
+	actions       Actions
 	log           *logrus.Entry
 	agentListener net.Listener
 }
 
-func New(serial uint32, log *logrus.Logger) (*SSHAgent, error) {
+type Actions struct {
+	BeforeSignHook string
+}
+
+func New(serial uint32, log *logrus.Logger, action Actions) (*SSHAgent, error) {
 	yk, err := yubikey.OpenBySerial(serial)
 	if err != nil {
 		return nil, err
@@ -32,8 +37,9 @@ func New(serial uint32, log *logrus.Logger) (*SSHAgent, error) {
 	})
 
 	return &SSHAgent{
-		yk:  yk,
-		log: contextLogger,
+		actions: action,
+		yk:      yk,
+		log:     contextLogger,
 	}, nil
 }
 

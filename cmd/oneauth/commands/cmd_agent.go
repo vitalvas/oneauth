@@ -63,7 +63,9 @@ var agentCmd = &cli.Command{
 
 			log.WithField("yubikey", config.Keyring.Yubikey.Serial).Println("opening yubikey:", config.Keyring.Yubikey.Serial)
 
-			agent, err = sshagent.New(config.Keyring.Yubikey.Serial, log)
+			agent, err = sshagent.New(config.Keyring.Yubikey.Serial, log, sshagent.Actions{
+				BeforeSignHook: config.Keyring.BeforeSignHook,
+			})
 			if err != nil {
 				return fmt.Errorf("failed to create agent: %w", err)
 			}

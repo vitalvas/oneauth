@@ -74,6 +74,17 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 			continue
 		}
 
+		hookEnv := map[string]string{
+			"YUBIKEY_SLOT":   key.Slot.String(),
+			"YUBIKEY_SERIAL": fmt.Sprintf("%d", a.yk.Serial),
+		}
+
+		if a.actions.BeforeSignHook != "" {
+			if err := tools.RunCommand(a.actions.BeforeSignHook, hookEnv); err != nil {
+				return nil, fmt.Errorf("before sign hook failed: %w", err)
+			}
+		}
+
 		sig, err := a.sshSign(key, data, flags)
 		if err != nil {
 			return nil, fmt.Errorf("failed to sign: %w", err)
