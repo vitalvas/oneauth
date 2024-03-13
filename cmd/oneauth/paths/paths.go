@@ -4,6 +4,10 @@ import "github.com/vitalvas/oneauth/internal/tools"
 
 const oneauthDir = ".oneauth"
 
+func AgentID() (string, error) {
+	return tools.InHomeDir(oneauthDir, "agent_id")
+}
+
 func AgentSocket() (string, error) {
 	return tools.InHomeDir(oneauthDir, "ssh-agent.sock")
 }

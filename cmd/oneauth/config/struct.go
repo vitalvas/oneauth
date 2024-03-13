@@ -1,6 +1,10 @@
 package config
 
+import "github.com/google/uuid"
+
 type Config struct {
+	AgentID uuid.UUID `yaml:"-"`
+
 	ControlSocketPath string  `yaml:"control_socket_path,omitempty"`
 	AgentLogPath      string  `yaml:"agent_log_path,omitempty"`
 	Socket            Socket  `yaml:"socket,omitempty"`

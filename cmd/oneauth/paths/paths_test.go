@@ -10,6 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAgentID(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
+
+	actual, err := AgentID()
+	assert.Nil(t, err, "Error getting agent ID path: %v", err)
+
+	expected := filepath.Join(home, oneauthDir, "agent_id")
+	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
+}
+
 func TestAgentSocket(t *testing.T) {
 	home, err := os.UserHomeDir()
 	assert.Nil(t, err, "Error getting user home directory: %v", err)

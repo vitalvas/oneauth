@@ -45,5 +45,12 @@ func Load(filePath string) (*Config, error) {
 		return nil, err
 	}
 
+	agentID, err := LoadOrCreateAgentID()
+	if err != nil {
+		return nil, err
+	}
+
+	conf.AgentID = agentID
+
 	return conf, nil
 }
