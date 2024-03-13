@@ -23,7 +23,7 @@ var agentCmd = &cli.Command{
 	Name:        "agent",
 	Usage:       "SSH Agent",
 	Description: "All configuration options can be set in the config file",
-	Before: func(c *cli.Context) error {
+	Before: func(_ *cli.Context) error {
 		version := buildinfo.Version
 
 		commit := buildinfo.Commit
@@ -109,7 +109,7 @@ var agentCmd = &cli.Command{
 		})
 
 		group.Go(func() error {
-			return xcmd.PeriodicRun(ctx, func(ctx context.Context) error {
+			return xcmd.PeriodicRun(ctx, func(_ context.Context) error {
 				for _, path := range []string{
 					config.Socket.Path,
 					config.ControlSocketPath,

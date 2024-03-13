@@ -10,7 +10,7 @@ import (
 var serviceRestartCmd = &cli.Command{
 	Name:  "restart",
 	Usage: "Restart the service",
-	Action: func(c *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		if err := service.Restart(); err != nil {
 			return err
 		}

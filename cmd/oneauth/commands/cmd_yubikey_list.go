@@ -13,7 +13,7 @@ import (
 var yubikeyListCmd = &cli.Command{
 	Name:  "list",
 	Usage: "List Yubikeys",
-	Action: func(c *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		cards, err := yubikey.Cards()
 		if err != nil {
 			return err

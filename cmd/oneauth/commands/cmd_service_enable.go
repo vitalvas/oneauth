@@ -10,7 +10,7 @@ import (
 var serviceEnableCmd = &cli.Command{
 	Name:  "enable",
 	Usage: "Enable the service",
-	Action: func(c *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		if err := service.Install(); err != nil {
 			return err
 		}

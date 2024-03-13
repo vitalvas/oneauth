@@ -11,7 +11,7 @@ import (
 var updateCmd = &cli.Command{
 	Name:  "update",
 	Usage: "update oneauth",
-	Action: func(c *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		manifest, err := updates.Check("oneauth", buildinfo.Version)
 		if err != nil {
 			switch err {

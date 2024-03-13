@@ -53,7 +53,7 @@ func (s *Server) loadConfig(c *cli.Context) error {
 }
 
 func (s *Server) runServer(srv *Server) cli.ActionFunc {
-	return func(c *cli.Context) error {
+	return func(_ *cli.Context) error {
 		srv.sshConfig = &ssh.ServerConfig{
 			ServerVersion:     "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
 			PasswordCallback:  srv.sshPasswordCallback,

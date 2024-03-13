@@ -30,7 +30,7 @@ type infoData struct {
 var infoCmd = &cli.Command{
 	Name:  "info",
 	Usage: "Prints detailed information",
-	Action: func(c *cli.Context) error {
+	Action: func(_ *cli.Context) error {
 		cards, err := yubikey.Cards()
 		if err != nil {
 			return err

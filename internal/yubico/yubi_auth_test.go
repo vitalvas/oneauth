@@ -207,7 +207,7 @@ func TestNewYubiAuth(t *testing.T) {
 
 func TestMakeRequest(t *testing.T) {
 	// Mock HTTP server for testing
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`timestamp=2`))
 	}))
@@ -255,7 +255,7 @@ func TestMakeRequest(t *testing.T) {
 
 	t.Run("FailedStatusCode", func(t *testing.T) {
 		// Mocking a server that returns a non-OK status code
-		badStatusServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		badStatusServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer badStatusServer.Close()

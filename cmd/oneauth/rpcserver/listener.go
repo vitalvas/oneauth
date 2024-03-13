@@ -31,7 +31,7 @@ func (s *RPCServer) ListenAndServe(_ context.Context, socketPath string) error {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintf(w, "hello world from oneauth agent")
 	})
 

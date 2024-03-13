@@ -80,13 +80,13 @@ func (s *Server) sshPasswordCallback(conn ssh.ConnMetadata, password []byte) (*s
 
 func (s *Server) sshPublicKeyCallback(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 	checker := ssh.CertChecker{
-		IsUserAuthority: func(auth ssh.PublicKey) bool {
+		IsUserAuthority: func(_ ssh.PublicKey) bool {
 			return false
 		},
-		IsRevoked: func(cert *ssh.Certificate) bool {
+		IsRevoked: func(_ *ssh.Certificate) bool {
 			return false
 		},
-		UserKeyFallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+		UserKeyFallback: func(_ ssh.ConnMetadata, _ ssh.PublicKey) (*ssh.Permissions, error) {
 			return nil, errors.New("only SSH certificates are supported")
 		},
 	}
