@@ -19,7 +19,16 @@ permissions:
   contents: read
 
 jobs:
+  pre-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: set env
+        run: |
+          echo "BUILD_TIMESTAMP=$(date -u +'%s')" >> $GITHUB_ENV
+
   build:
+    needs: [pre-build]
     runs-on: ${{ matrix.os }}
 
     strategy:

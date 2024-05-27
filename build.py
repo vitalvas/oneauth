@@ -51,6 +51,10 @@ class Make:
             self.RELEASE = True
             return ref_name
 
+        build_timestamp = os.getenv('BUILD_TIMESTAMP')
+        if build_timestamp:
+            return 'v0.0.' + build_timestamp
+
         return 'v0.0.' + str(int(time.time()))
 
     @staticmethod
