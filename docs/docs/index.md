@@ -4,9 +4,6 @@ hide:
 ---
 # OneAuth
 
-!!! danger
-    This project is in the early stages of development and is not ready for use in production.
-
 OneAuth is a custom SSH agent (maybe not only in the future) for working with built-in PKI on top of Yubikey, which:
 
 * does initial Yubikey setup
