@@ -176,7 +176,7 @@ class Make:
         manifest = {
             'name': name,
             'version': self.VERSION,
-            'remote_prefix': f'https://oneauth-files.vitalvas.vitalvas.dev/test/{self.VERSION}/',
+            'remote_prefix': f'https://oneauth-files.vitalvas.dev/test/{self.VERSION}/',
         }
 
         if self.RELEASE:
