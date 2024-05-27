@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"github.com/vitalvas/oneauth/internal/keystore"
 	"github.com/vitalvas/oneauth/internal/netutil"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh/agent"
@@ -22,6 +23,8 @@ type SSHAgent struct {
 	agentListener net.Listener
 
 	lockPassphrase []byte
+
+	softKeys *keystore.Store
 }
 
 type Actions struct {
@@ -42,10 +45,14 @@ func New(serial uint32, log *logrus.Logger, action Actions) (*SSHAgent, error) {
 		actions: action,
 		yk:      yk,
 		log:     contextLogger,
+
+		softKeys: keystore.New(),
 	}, nil
 }
 
 func (a *SSHAgent) Close() error {
+	a.softKeys.RemoveAll()
+
 	return nil
 }
 

@@ -25,7 +25,7 @@ func (a *SSHAgent) List() ([]*agent.Key, error) {
 		return nil, ErrAgentLocked
 	}
 
-	keys := make([]*agent.Key, 0, len(yubikey.AllSSHSlots))
+	keys := make([]*agent.Key, 0, len(yubikey.AllSSHSlots)+a.softKeys.Len())
 
 	activeSlots, err := a.yk.GetActiveSlots(yubikey.AllSSHSlots...)
 	if err != nil {
@@ -48,6 +48,10 @@ func (a *SSHAgent) List() ([]*agent.Key, error) {
 			Blob:    pk.Marshal(),
 			Comment: fmt.Sprintf("YubiKey #%d PIV Slot %s", a.yk.Serial, slot.PIVSlot.String()),
 		})
+	}
+
+	for _, key := range a.softKeys.List() {
+		keys = append(keys, key.AgentKey())
 	}
 
 	return keys, nil
@@ -105,6 +109,10 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 		a.log.Println("signed with slot:", key.Slot.String(), "payload:", dataHash)
 
 		return sig, nil
+	}
+
+	if key, ok := a.softKeys.Get(fp); ok {
+		return key.Sign(data, flags)
 	}
 
 	return nil, fmt.Errorf("unknown key %s", fp)
