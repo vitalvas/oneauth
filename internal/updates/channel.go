@@ -9,7 +9,7 @@ func (c *Channel) String() string {
 }
 
 const (
-	ChannelDev  Channel = "https://github-build-artifacts.vitalvas.dev/vitalvas/oneauth/"
+	ChannelDev  Channel = "https://oneauth-files.vitalvas.dev/test/"
 	ChannelProd Channel = "https://oneauth-files.vitalvas.dev/release/"
 )
 

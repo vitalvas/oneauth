@@ -8,7 +8,7 @@ func TestChannelString(t *testing.T) {
 		channel  Channel
 		expected string
 	}{
-		{"Dev Channel", ChannelDev, "https://github-build-artifacts.vitalvas.dev/vitalvas/oneauth/"},
+		{"Dev Channel", ChannelDev, "https://oneauth-files.vitalvas.dev/test/"},
 		{"Prod Channel", ChannelProd, "https://oneauth-files.vitalvas.dev/release/"},
 	}
 

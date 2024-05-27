@@ -14,13 +14,13 @@ func TestGetUpdateManifestURL(t *testing.T) {
 		{
 			appName:     "oneauth",
 			channel:     ChannelDev,
-			expectedURL: "https://github-build-artifacts.vitalvas.dev/vitalvas/oneauth/oneauth_update_manifest.json",
+			expectedURL: "https://oneauth-files.vitalvas.dev/test/update_manifest/oneauth.json",
 			expectedErr: nil,
 		},
 		{
 			appName:     "oneauth",
 			channel:     ChannelProd,
-			expectedURL: "https://oneauth-files.vitalvas.dev/release/oneauth_update_manifest.json",
+			expectedURL: "https://oneauth-files.vitalvas.dev/release/update_manifest/oneauth.json",
 			expectedErr: nil,
 		},
 		{

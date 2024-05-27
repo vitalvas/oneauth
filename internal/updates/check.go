@@ -29,7 +29,7 @@ func getUpdateManifestURL(appName string, channel Channel) (string, error) {
 		return "", ErrSchemeNotHTTPS
 	}
 
-	endpointURL, err := url.Parse(fmt.Sprintf("%s_update_manifest.json", appName))
+	endpointURL, err := url.Parse(fmt.Sprintf("update_manifest/%s.json", appName))
 	if err != nil {
 		return "", err
 	}
