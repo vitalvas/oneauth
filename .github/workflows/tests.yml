@@ -38,9 +38,9 @@ jobs:
     strategy:
       matrix:
         os:
-          - 'ubuntu-20.04'
-          - macos-latest
-          # - macos-latest-xlarge  # TODO: enable on release (costs required)
+          - macos-14-arm64
+          - macos-14-x64
+          - ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v4
