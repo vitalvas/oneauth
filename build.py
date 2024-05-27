@@ -176,7 +176,7 @@ class Make:
         manifest = {
             'name': name,
             'version': self.VERSION,
-            'remote_prefix': f'https://github-build-artifacts.vitalvas.dev/{repo}/{self.VERSION}/',
+            'remote_prefix': f'https://oneauth-files.vitalvas.vitalvas.dev/test/{self.VERSION}/',
         }
 
         if self.RELEASE:
@@ -198,10 +198,12 @@ class Make:
 
     def upload_file(self, src: str, dst: str) -> None:
         repo = os.getenv('GITHUB_REPOSITORY')
-        upload_cmd = ['aws', 's3', 'cp', f'build/{src}', f's3://vv-github-build-artifacts/{repo}/{dst}']
+        s3_bucket = os.getenv('AWS_BUCKET_BUILD')
+
+        upload_cmd = ['aws', 's3', 'cp', f'build/{src}', f's3://{s3_bucket}/test/{dst}']
 
         if self.RELEASE:
-            upload_cmd = ['aws', 's3', 'cp', f'build/{src}', f's3://oneauth-files.vitalvas.dev/release/{dst}']
+            upload_cmd = ['aws', 's3', 'cp', f'build/{src}', f's3://{s3_bucket}/release/{dst}']
 
         raw = subprocess.Popen(upload_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         raw.wait()
