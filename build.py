@@ -51,10 +51,6 @@ class Make:
             self.RELEASE = True
             return ref_name
 
-        run_id = os.getenv('GITHUB_RUN_ID')
-        if run_id:
-            return 'v0.0.' + run_id
-
         return 'v0.0.' + str(int(time.time()))
 
     @staticmethod
@@ -188,7 +184,7 @@ class Make:
             json.dump(manifest, file)
 
         return {
-            file_name: file_name
+            file_name: f'update_manifest/{name}.json'
         }
 
     def upload_files(self, files: dict) -> None:
