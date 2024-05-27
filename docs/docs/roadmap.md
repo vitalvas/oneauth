@@ -20,6 +20,7 @@
 
 * [x] SSH Agent
 * [x] Check for correct source requester to unix socket (deny access from another user)
+* [x] External ssh-keys (add via `ssh-add`)
 * [ ] RPC Server for cuncurrent access to Yubikey
 * [ ] Write audit log
 
