@@ -23,13 +23,13 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      build-timestamp: ${{ steps.set-env.outputs.BUILD_TIMESTAMP }}
+      build_timestamp: ${{ steps.set-env.outputs.BUILD_TIMESTAMP }}
 
     steps:
       - name: set env
         id: set-env
         run: |
-          echo "BUILD_TIMESTAMP=$(date -u +'%s')" >> $GITHUB_ENV
+          echo "BUILD_TIMESTAMP=$(date -u +'%s')" >> $GITHUB_OUTPUT
 
   build:
     needs: [pre-build]
@@ -71,7 +71,7 @@ jobs:
         run: python build.py
         env:
           AWS_BUCKET_BUILD: ${{ secrets.AWS_BUCKET_BUILD }}
-          BUILD_TIMESTAMP: ${{ needs.pre-build.outputs.build-timestamp }}
+          BUILD_TIMESTAMP: ${{ needs.pre-build.outputs.build_timestamp }}
       
       - name: Publish coverage
         uses: codecov/codecov-action@v4
