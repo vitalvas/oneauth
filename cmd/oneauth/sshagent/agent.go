@@ -20,6 +20,8 @@ type SSHAgent struct {
 	actions       Actions
 	log           *logrus.Entry
 	agentListener net.Listener
+
+	lockPassphrase []byte
 }
 
 type Actions struct {

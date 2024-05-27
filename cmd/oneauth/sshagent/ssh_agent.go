@@ -13,9 +13,17 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
+func (a *SSHAgent) RemoveAll() error {
+	return a.Close()
+}
+
 func (a *SSHAgent) List() ([]*agent.Key, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
+	if a.lockPassphrase != nil {
+		return nil, ErrAgentLocked
+	}
 
 	keys := make([]*agent.Key, 0, len(yubikey.AllSSHSlots))
 
@@ -52,6 +60,10 @@ func (a *SSHAgent) Sign(reqKey ssh.PublicKey, data []byte) (*ssh.Signature, erro
 func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.SignatureFlags) (*ssh.Signature, error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
+
+	if a.lockPassphrase != nil {
+		return nil, ErrAgentLocked
+	}
 
 	fp := tools.SSHFingerprint(reqKey)
 
@@ -99,8 +111,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 }
 
 func (a *SSHAgent) sshSign(key yubikey.Cert, data []byte, _ agent.SignatureFlags) (*ssh.Signature, error) {
-	_, skip := os.LookupEnv("I_AM_A_REALLY_STUPID_PERSON_WHO_IGNORES_SECURITY_ADVICE")
-	if !skip {
+	if _, skip := os.LookupEnv("I_AM_A_REALLY_STUPID_PERSON_WHO_IGNORES_SECURITY_ADVICE"); !skip {
 		if !key.NotBefore.IsZero() && key.NotBefore.After(time.Now()) {
 			return nil, fmt.Errorf("key not yet valid")
 		}
