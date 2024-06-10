@@ -13,7 +13,7 @@ require (
 	github.com/vitalvas/gokit v0.8.0
 	github.com/zalando/go-keyring v0.2.4
 	golang.org/x/crypto v0.23.0
-	golang.org/x/mod v0.17.0
+	golang.org/x/mod v0.18.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.20.0
 	golang.org/x/term v0.20.0
