@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/vitalvas/gokit v0.8.0
-	github.com/zalando/go-keyring v0.2.4
+	github.com/zalando/go-keyring v0.2.5
 	golang.org/x/crypto v0.23.0
 	golang.org/x/mod v0.18.0
 	golang.org/x/sync v0.7.0
