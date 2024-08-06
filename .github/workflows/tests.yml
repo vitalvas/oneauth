@@ -39,8 +39,10 @@ jobs:
       matrix:
         os:
           - macos-14 # arm64
-          - macos-14-large # x86_64
           - ubuntu-20.04
+        include:
+          - os: macos-14-large # x86_64
+            if: github.ref == 'refs/heads/master'
 
     steps:
       - uses: actions/checkout@v4
