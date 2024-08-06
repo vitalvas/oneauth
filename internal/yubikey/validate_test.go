@@ -16,6 +16,8 @@ func TestValidatePin(t *testing.T) {
 		{"5413380", true},
 		{"45165603", true},
 		{"4739347", true},
+		{"111111", false},
+		{"11111111", false},
 	}
 
 	for _, test := range tests {
@@ -43,6 +45,8 @@ func TestValidatePuk(t *testing.T) {
 		{"4739347", false},
 		{"21297607", true},
 		{"43298881", true},
+		{"111111", false},
+		{"11111111", false},
 	}
 
 	for _, test := range tests {
