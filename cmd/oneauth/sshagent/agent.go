@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/internal/keystore"
 	"github.com/vitalvas/oneauth/internal/netutil"
 	"github.com/vitalvas/oneauth/internal/yubikey"
@@ -31,7 +32,7 @@ type Actions struct {
 	BeforeSignHook string
 }
 
-func New(serial uint32, log *logrus.Logger, action Actions) (*SSHAgent, error) {
+func New(serial uint32, log *logrus.Logger, config *config.Config) (*SSHAgent, error) {
 	yk, err := yubikey.OpenBySerial(serial)
 	if err != nil {
 		return nil, err
@@ -42,11 +43,13 @@ func New(serial uint32, log *logrus.Logger, action Actions) (*SSHAgent, error) {
 	})
 
 	return &SSHAgent{
-		actions: action,
-		yk:      yk,
-		log:     contextLogger,
+		actions: Actions{
+			BeforeSignHook: config.Keyring.BeforeSignHook,
+		},
+		yk:  yk,
+		log: contextLogger,
 
-		softKeys: keystore.New(),
+		softKeys: keystore.New(config.Keyring.KeepKeySeconds),
 	}, nil
 }
 
