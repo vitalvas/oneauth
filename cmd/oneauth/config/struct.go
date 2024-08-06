@@ -19,6 +19,7 @@ type Socket struct {
 type Keyring struct {
 	Yubikey        KeyringYubikey `yaml:"yubikey,omitempty"`
 	BeforeSignHook string         `yaml:"before_sign_hook,omitempty"`
+	KeepKeySeconds int64          `yaml:"keep_key_seconds,omitempty"`
 }
 
 type KeyringYubikey struct {

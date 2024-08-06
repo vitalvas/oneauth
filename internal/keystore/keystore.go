@@ -2,18 +2,21 @@ package keystore
 
 import (
 	"sync"
+	"time"
 
 	"github.com/vitalvas/oneauth/internal/agentkey"
 )
 
 type Store struct {
-	keys map[string]*agentkey.Key
-	lock sync.Mutex
+	keys           map[string]*agentkey.Key // fingerprint -> key
+	lock           sync.Mutex
+	keepKeySeconds int64 // max time to keep a key in the store
 }
 
-func New() *Store {
+func New(keepKeySeconds int64) *Store {
 	return &Store{
-		keys: make(map[string]*agentkey.Key),
+		keys:           make(map[string]*agentkey.Key),
+		keepKeySeconds: keepKeySeconds,
 	}
 }
 
@@ -30,7 +33,11 @@ func (s *Store) List() []*agentkey.Key {
 
 	keys := make([]*agentkey.Key, 0, len(s.keys))
 	for _, key := range s.keys {
-		keys = append(keys, key)
+		if s.keepKeySeconds > 0 && (key.LastUsed().Unix()+s.keepKeySeconds) < time.Now().Unix() {
+			delete(s.keys, key.Fingerprint())
+		} else {
+			keys = append(keys, key)
+		}
 	}
 
 	return keys

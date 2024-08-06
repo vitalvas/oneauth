@@ -3,6 +3,7 @@ package agentkey
 import (
 	"crypto/rand"
 	"fmt"
+	"time"
 
 	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/crypto/ssh"
@@ -10,10 +11,11 @@ import (
 )
 
 type Key struct {
-	name        string
-	fingerprint string
-	signer      ssh.Signer
 	agentKey    *agent.Key
+	fingerprint string
+	lastUsed    time.Time
+	name        string
+	signer      ssh.Signer
 }
 
 func NewKey(key agent.AddedKey) (*Key, error) {
@@ -41,11 +43,16 @@ func NewKey(key agent.AddedKey) (*Key, error) {
 			Blob:    pubKey.Marshal(),
 			Comment: key.Comment,
 		},
+		lastUsed: time.Now(),
 	}, nil
 }
 
 func (k *Key) Fingerprint() string {
 	return k.fingerprint
+}
+
+func (k *Key) LastUsed() time.Time {
+	return k.lastUsed
 }
 
 func (k *Key) AgentKey() *agent.Key {
@@ -71,6 +78,8 @@ func (k *Key) Sign(data []byte, flags agent.SignatureFlags) (*ssh.Signature, err
 	default:
 		return nil, fmt.Errorf("unsupported signature flags: %d", flags)
 	}
+
+	k.lastUsed = time.Now()
 
 	return algorithmSigner.SignWithAlgorithm(rand.Reader, data, algorithm)
 }
