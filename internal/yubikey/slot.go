@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	// default slots
 	SlotKeyRSAID   = uint32(0x95)
 	SlotKeyECDSAID = uint32(0x94)
 
@@ -28,6 +29,16 @@ var (
 
 		for id := uint32(0x82); id <= 0x95; id++ {
 			out = append(out, MustSlotFromKeyID(id))
+		}
+
+		return out
+	}()
+
+	PIVSlots = func() []string {
+		out := make([]string, len(AllSlots))
+
+		for i, slot := range AllSlots {
+			out[i] = slot.String()
 		}
 
 		return out

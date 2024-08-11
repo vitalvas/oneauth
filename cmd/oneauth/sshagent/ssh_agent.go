@@ -46,7 +46,7 @@ func (a *SSHAgent) List() ([]*agent.Key, error) {
 		keys = append(keys, &agent.Key{
 			Format:  pk.Type(),
 			Blob:    pk.Marshal(),
-			Comment: fmt.Sprintf("YubiKey #%d PIV Slot %s", a.yk.Serial, slot.PIVSlot.String()),
+			Comment: fmt.Sprintf("YubiKey #%d PIV Slot 0x%s", a.yk.Serial, slot.PIVSlot.String()),
 		})
 	}
 
