@@ -27,3 +27,7 @@ func BinDir() (string, error) {
 func LogDir() (string, error) {
 	return tools.InHomeDir(oneauthDir, "log")
 }
+
+func RootDir() (string, error) {
+	return tools.InHomeDir(oneauthDir)
+}
