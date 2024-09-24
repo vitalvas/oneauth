@@ -34,14 +34,7 @@ func Load(filePath string) (*Config, error) {
 		},
 	}
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	defer file.Close()
-
-	if err := yaml.NewDecoder(file).Decode(&conf); err != nil {
+	if err := loadYamlFile(filePath, conf); err != nil {
 		return nil, err
 	}
 
@@ -53,4 +46,18 @@ func Load(filePath string) (*Config, error) {
 	conf.AgentID = agentID
 
 	return conf, nil
+}
+
+func loadYamlFile(filePath string, v *Config) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	decoder := yaml.NewDecoder(file)
+	decoder.KnownFields(true) // fail on unknown fields
+
+	return decoder.Decode(v)
 }
