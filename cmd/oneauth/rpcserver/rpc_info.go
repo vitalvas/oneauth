@@ -11,7 +11,7 @@ type Info struct {
 	Pid int `json:"pid"`
 }
 
-func (s *RPCServer) rpcInfo(w http.ResponseWriter, r *http.Request) {
+func (s *RPCServer) rpcInfo(w http.ResponseWriter, _ *http.Request) {
 	info := Info{
 		Pid: os.Getpid(),
 	}
