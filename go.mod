@@ -1,6 +1,7 @@
 module github.com/vitalvas/oneauth
 
 go 1.22
+toolchain go1.22.5
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
@@ -10,13 +11,13 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.4
-	github.com/vitalvas/gokit v0.10.0
+	github.com/vitalvas/gokit v0.13.0
 	github.com/zalando/go-keyring v0.2.5
-	golang.org/x/crypto v0.26.0
-	golang.org/x/mod v0.20.0
+	golang.org/x/crypto v0.27.0
+	golang.org/x/mod v0.21.0
 	golang.org/x/sync v0.8.0
-	golang.org/x/sys v0.24.0
-	golang.org/x/term v0.23.0
+	golang.org/x/sys v0.25.0
+	golang.org/x/term v0.24.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -50,6 +51,6 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 )
