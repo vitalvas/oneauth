@@ -102,3 +102,15 @@ func TestServiceFile(t *testing.T) {
 		t.Errorf("Expected result to be in %s, got result: %s", correctDir, path)
 	}
 }
+
+func TestRootDir(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
+
+	actual, err := RootDir()
+	assert.Nil(t, err, "Error getting root directory: %v", err)
+
+	expected := filepath.Join(home, oneauthDir)
+
+	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
+}

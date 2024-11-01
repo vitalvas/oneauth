@@ -157,3 +157,16 @@ func writeServiceTemplate(exePath string, serviceFile *os.File) error {
 		template.New("service").Parse(serviceTmpl),
 	).Execute(serviceFile, serviceInfo)
 }
+
+func IsRunning() bool {
+	output, err := callLaunchCtl("list", serviceName)
+	if err != nil {
+		return false
+	}
+
+	if !strings.Contains(output, "PID") {
+		return false
+	}
+
+	return true
+}
