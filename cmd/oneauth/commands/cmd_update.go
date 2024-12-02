@@ -52,10 +52,21 @@ var updateCmd = &cli.Command{
 			return fmt.Errorf("update version mismatch: %s != %s", versionManifest.Version, manifest.Version)
 		}
 
-		fmt.Printf(
-			"New version available: (current: %s; channel: %s) %s\n",
-			buildinfo.Version, updates.GetChannelName(buildinfo.Version), manifest.Version,
-		)
+		newVersion, err := updates.CheckNewVersion(buildinfo.Version, manifest.Version)
+		if err != nil {
+			return fmt.Errorf("failed to check new version: %w", err)
+		}
+
+		if newVersion {
+			fmt.Printf(
+				"New version available: (current: %s; channel: %s) %s\n",
+				buildinfo.Version,
+				updates.GetChannelName(buildinfo.Version),
+				manifest.Version,
+			)
+		} else {
+			fmt.Println("No update available")
+		}
 
 		return nil
 	},
