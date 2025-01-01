@@ -87,8 +87,8 @@ github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65E
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/urfave/cli/v2 v2.27.5 h1:WoHEJLdsXr6dDWoJgMq/CboDmyY/8HMMH1fTECbih+w=
 github.com/urfave/cli/v2 v2.27.5/go.mod h1:3Sevf16NykTbInEnD0yKkjDAeZDS0A6bzhBH5hrMvTQ=
-github.com/vitalvas/gokit v0.13.1 h1:ux5Sr2cJQ4wEyNee8eDP/CV1MbC/SMcKov9HbarnuXM=
-github.com/vitalvas/gokit v0.13.1/go.mod h1:0E7BN/bqKCWn8GXicra5IBsk2ELfUI9Wsk8fJGHi7H4=
+github.com/vitalvas/gokit v0.14.0 h1:N5y/2deq+/+S519ejBDzbnWrZyUr6ku7AZ30ObcC/sU=
+github.com/vitalvas/gokit v0.14.0/go.mod h1:696M2KinmWspMcT4v8AU20n14MFcJxtuZ8/2uIz8g/A=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 h1:gEOO8jv9F4OT7lGCjxCBTO/36wtF6j2nSip77qHd4x4=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 github.com/zalando/go-keyring v0.2.6 h1:r7Yc3+H+Ux0+M72zacZoItR3UDxeWfKTcabvkI8ua9s=
