@@ -1,6 +1,10 @@
 package updates
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestCheckVersion(t *testing.T) {
 	tests := []struct {
@@ -32,6 +36,80 @@ func TestCheckVersion(t *testing.T) {
 			} else if err == nil && resp == nil {
 				t.Error("version is nil")
 			}
+		})
+	}
+}
+
+func TestCheckNewVersion(t *testing.T) {
+	tests := []struct {
+		name           string
+		currentVersion string
+		newVersion     string
+		expectedResult bool
+		expectError    bool
+	}{
+		{
+			name:           "New version is greater",
+			currentVersion: "v1.0.0",
+			newVersion:     "v1.1.0",
+			expectedResult: true,
+			expectError:    false,
+		},
+		{
+			name:           "New version is equal",
+			currentVersion: "v1.0.0",
+			newVersion:     "v1.0.0",
+			expectedResult: false,
+			expectError:    false,
+		},
+		{
+			name:           "New version is lower",
+			currentVersion: "v1.1.0",
+			newVersion:     "v1.0.0",
+			expectedResult: false,
+			expectError:    false,
+		},
+		{
+			name:           "Invalid current version",
+			currentVersion: "invalid",
+			newVersion:     "v1.1.0",
+			expectedResult: false,
+			expectError:    true,
+		},
+		{
+			name:           "Invalid new version",
+			currentVersion: "v1.0.0",
+			newVersion:     "invalid",
+			expectedResult: false,
+			expectError:    true,
+		},
+		{
+			name:           "Empty current version",
+			currentVersion: "",
+			newVersion:     "v1.1.0",
+			expectedResult: false,
+			expectError:    true,
+		},
+		{
+			name:           "Empty new version",
+			currentVersion: "v1.0.0",
+			newVersion:     "",
+			expectedResult: false,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := CheckNewVersion(tt.currentVersion, tt.newVersion)
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.expectedResult, result)
 		})
 	}
 }
