@@ -60,7 +60,6 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          go tool cover -func=coverage.txt > coverage-report.txt
           COVERAGE=$(go tool cover -func=coverage.txt | grep "^total:" | awk '{print $3}')
           echo "## Test Coverage Report - ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -68,7 +67,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Coverage by Package" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat coverage-report.txt >> $GITHUB_STEP_SUMMARY
+          
+          # Generate per-package coverage
+          go test -cover ./... | grep -E "^(ok|FAIL)" | sort >> $GITHUB_STEP_SUMMARY
+          
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
