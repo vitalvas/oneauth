@@ -1,17 +1,16 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/yubico"
 )
 
 func (s *Server) runHTTPServer(_ *cli.Context) error {
-	gin.SetMode(gin.ReleaseMode)
-
 	if s.yubico == nil {
 		yAuth, err := yubico.NewYubiAuth(s.config.Yubico.ClientID, s.config.Yubico.ClientSecret)
 		if err != nil {
@@ -21,23 +20,22 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 		s.yubico = yAuth
 	}
 
-	r := gin.Default()
+	r := mux.NewRouter()
 
-	r.GET("/-/healthz", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	// Health check endpoint
+	r.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	}).Methods(http.MethodGet)
 
-	{
-		wellKnown := r.Group("/.well-known")
-		wellKnown.GET("/security.txt", s.wellKnownSecurityTxt)
-		wellKnown.GET("/oneauth-server.json", s.wellKnownOneAuth)
-	}
+	// Well-known endpoints
+	wellKnown := r.PathPrefix("/.well-known").Subrouter()
+	wellKnown.HandleFunc("/security.txt", s.wellKnownSecurityTxt).Methods(http.MethodGet)
+	wellKnown.HandleFunc("/oneauth-server.json", s.wellKnownOneAuth).Methods(http.MethodGet)
 
-	{
-		v1 := r.Group("/api/v1")
-		v1.GET("/yubikey/otp/verify", s.yubikeyOTPVerify)
-		v1.POST("/yubikey/otp/verify", s.yubikeyOTPVerify)
-	}
+	// API v1 endpoints
+	v1 := r.PathPrefix("/api/v1").Subrouter()
+	v1.HandleFunc("/yubikey/otp/verify", s.yubikeyOTPVerify).Methods(http.MethodGet, http.MethodGet)
 
-	return r.Run()
+	return http.ListenAndServe(":8080", r)
 }
