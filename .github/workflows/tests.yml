@@ -55,7 +55,7 @@ jobs:
           go-version: 1.22
 
       - name: Install deps for Linux
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-24.04'
         run: sudo apt install -quy libpcsclite-dev
 
       - name: Test
