@@ -45,6 +45,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJSON(needs.pre-build.outputs.build_os) }}
 
@@ -89,7 +90,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
-          file: ./coverage.txt
+          files: ./coverage.txt
           flags: ${{ matrix.os }}
 
   post-build:

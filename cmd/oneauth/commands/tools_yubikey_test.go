@@ -3,11 +3,29 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/oneauth/internal/yubikey"
 )
+
+// skipIfNoPCSC skips the test if PC/SC is not available
+func skipIfNoPCSC(t *testing.T) {
+	t.Helper()
+	_, err := yubikey.Cards()
+	if err != nil {
+		errStr := err.Error()
+		// Check for various PC/SC related errors
+		if strings.Contains(errStr, "Smart card resource manager is not running") ||
+			strings.Contains(errStr, "connecting to pscs") ||
+			strings.Contains(errStr, "the Smart card resource manager is not running") ||
+			strings.Contains(errStr, "failed to list cards") {
+			t.Skipf("Skipping test: PC/SC service is not available: %v", err)
+		}
+	}
+}
 
 func TestSelectYubiKey(t *testing.T) {
 	t.Run("NoYubiKeys", func(t *testing.T) {
@@ -29,6 +47,8 @@ func TestSelectYubiKey(t *testing.T) {
 	})
 
 	t.Run("SerialSetButNotFound", func(t *testing.T) {
+		skipIfNoPCSC(t)
+
 		// Create a mock context with a serial that won't be found
 		app := &cli.App{
 			Flags: []cli.Flag{
@@ -67,6 +87,7 @@ func TestSelectYubiKey(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
+				skipIfNoPCSC(t)
 				app := &cli.App{
 					Flags: []cli.Flag{
 						&cli.Uint64Flag{Name: "serial"},
@@ -154,6 +175,7 @@ func TestSelectYubiKeyLogic(t *testing.T) {
 	})
 
 	t.Run("NonZeroSerialHandling", func(t *testing.T) {
+		skipIfNoPCSC(t)
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
@@ -175,6 +197,7 @@ func TestSelectYubiKeyLogic(t *testing.T) {
 
 func TestSelectYubiKeyEdgeCases(t *testing.T) {
 	t.Run("MaxUint64Serial", func(t *testing.T) {
+		skipIfNoPCSC(t)
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
@@ -200,6 +223,7 @@ func TestSelectYubiKeyEdgeCases(t *testing.T) {
 
 		for _, serial := range largeSerials {
 			t.Run(fmt.Sprintf("Serial_%d", serial), func(t *testing.T) {
+				skipIfNoPCSC(t)
 				app := &cli.App{
 					Flags: []cli.Flag{
 						&cli.Uint64Flag{Name: "serial"},
