@@ -34,11 +34,7 @@ jobs:
         id: set-build-os
         shell: bash
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-            echo 'build_os=["macos-15", "macos-15-large", "ubuntu-24.04"]' >> $GITHUB_OUTPUT
-          else
-            echo 'build_os=["macos-15", "ubuntu-24.04"]' >> $GITHUB_OUTPUT
-          fi
+          echo 'build_os=["macos-15", "ubuntu-24.04"]' >> $GITHUB_OUTPUT
 
   build:
     needs: [pre-build]
@@ -61,6 +57,20 @@ jobs:
 
       - name: Test
         run: go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -func=coverage.txt > coverage-report.txt
+          COVERAGE=$(go tool cover -func=coverage.txt | grep "^total:" | awk '{print $3}')
+          echo "## Test Coverage Report - ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total Coverage:** $COVERAGE" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Coverage by Package" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat coverage-report.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Test Race
         run: go test -race -v ./...
@@ -86,7 +96,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           files: ./coverage.txt
-          flags: ${{ matrix.os }}
+          flags: ${{ contains(matrix.os, 'ubuntu') && 'ubuntu' || 'macos' }}
 
   post-build:
     runs-on: ubuntu-latest
