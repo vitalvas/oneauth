@@ -35,7 +35,7 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 
 	// API v1 endpoints
 	v1 := r.PathPrefix("/api/v1").Subrouter()
-	v1.HandleFunc("/yubikey/otp/verify", s.yubikeyOTPVerify).Methods(http.MethodGet, http.MethodGet)
+	v1.HandleFunc("/yubikey/otp/verify", s.yubikeyOTPVerify).Methods(http.MethodGet, http.MethodPost)
 
 	return http.ListenAndServe(":8080", r)
 }
