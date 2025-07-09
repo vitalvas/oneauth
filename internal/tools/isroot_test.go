@@ -10,7 +10,7 @@ import (
 
 func TestIsRoot(t *testing.T) {
 	result := IsRoot()
-	
+
 	// Get current user to verify the result
 	currentUser, err := user.Current()
 	if err != nil {
@@ -19,19 +19,19 @@ func TestIsRoot(t *testing.T) {
 		assert.IsType(t, false, result)
 		return
 	}
-	
+
 	expectedIsRoot := currentUser.Username == "root"
 	assert.Equal(t, expectedIsRoot, result)
-	
+
 	// Additional check using UID
 	uid := os.Getuid()
 	if uid == 0 {
 		// If UID is 0, we should be root
-		assert.True(t, result || currentUser.Username != "root", 
+		assert.True(t, result || currentUser.Username != "root",
 			"UID is 0 but IsRoot returned false and username is not root")
 	} else {
 		// If UID is not 0, we should not be root
-		assert.False(t, result && currentUser.Username == "root", 
+		assert.False(t, result && currentUser.Username == "root",
 			"UID is not 0 but IsRoot returned true and username is root")
 	}
 }
@@ -41,7 +41,7 @@ func TestIsRoot_Consistency(t *testing.T) {
 	result1 := IsRoot()
 	result2 := IsRoot()
 	result3 := IsRoot()
-	
+
 	assert.Equal(t, result1, result2)
 	assert.Equal(t, result2, result3)
 }
@@ -56,13 +56,13 @@ func TestIsRoot_LogicValidation(t *testing.T) {
 		assert.False(t, result, "IsRoot should return false when user.Current() fails")
 		return
 	}
-	
+
 	isRoot := IsRoot()
 	expectedIsRoot := currentUser.Username == "root"
-	
-	assert.Equal(t, expectedIsRoot, isRoot, 
+
+	assert.Equal(t, expectedIsRoot, isRoot,
 		"IsRoot result should match whether username is 'root'")
-	
-	t.Logf("Current user: %s, UID: %s, IsRoot: %v", 
+
+	t.Logf("Current user: %s, UID: %s, IsRoot: %v",
 		currentUser.Username, currentUser.Uid, isRoot)
 }

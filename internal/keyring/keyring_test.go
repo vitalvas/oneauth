@@ -78,7 +78,7 @@ func TestSet_MockTimeout(t *testing.T) {
 	// This should timeout quickly since we made the timeout very short
 	// and the actual keyring operation might take longer
 	err := Set("test-user", "test-secret")
-	
+
 	// We expect either success or timeout, both are valid in this test environment
 	if err != nil {
 		assert.True(t, errors.Is(err, ErrTimeoutSetSecret) || err != nil)
@@ -93,15 +93,15 @@ func TestGet_MockTimeout(t *testing.T) {
 
 	// This should timeout quickly
 	secret, err := Get("non-existent-user")
-	
+
 	// We expect either timeout, not found, or other error
 	if err != nil {
-		assert.True(t, 
-			errors.Is(err, ErrTimeoutGetSecret) || 
-			errors.Is(err, ErrNotFound) || 
-			err != nil)
+		assert.True(t,
+			errors.Is(err, ErrTimeoutGetSecret) ||
+				errors.Is(err, ErrNotFound) ||
+				err != nil)
 	}
-	
+
 	// If no error, secret should be a string (could be empty)
 	if err == nil {
 		assert.IsType(t, "", secret)
@@ -116,7 +116,7 @@ func TestDelete_MockTimeout(t *testing.T) {
 
 	// This should timeout quickly
 	err := Delete("non-existent-user")
-	
+
 	// We expect either timeout or some other error (not found is also valid)
 	if err != nil {
 		assert.True(t, errors.Is(err, ErrTimeoutDeleteSecret) || err != nil)
@@ -134,7 +134,7 @@ func TestSet_ValidInput(t *testing.T) {
 
 	// Attempt to set the secret
 	err := Set(testUser, testSecret)
-	
+
 	// On systems without keyring support, this might fail, which is acceptable
 	if err != nil {
 		t.Logf("Set operation failed (expected on systems without keyring): %v", err)
@@ -157,7 +157,7 @@ func TestGet_NonExistentUser(t *testing.T) {
 	defer func() { opsTimeout = originalTimeout }()
 
 	_, err := Get("definitely-non-existent-user-12345")
-	
+
 	// Should get not found or some other error
 	assert.Error(t, err)
 }

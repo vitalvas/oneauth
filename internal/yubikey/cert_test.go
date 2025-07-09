@@ -59,7 +59,7 @@ func TestCertRequest_Structure(t *testing.T) {
 		PINPolicy:   piv.PINPolicyAlways,
 		TouchPolicy: piv.TouchPolicyNever,
 	}
-	
+
 	certReq := CertRequest{
 		Key:        key,
 		CommonName: "test@example.com",

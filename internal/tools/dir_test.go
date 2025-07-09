@@ -72,21 +72,21 @@ func TestMkDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := tt.setupFunc(t)
-			
+
 			err := MkDir(dir, tt.perm)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				return
 			}
-			
+
 			require.NoError(t, err)
-			
+
 			// Verify directory exists
 			info, err := os.Stat(dir)
 			require.NoError(t, err)
 			assert.True(t, info.IsDir())
-			
+
 			// Verify permissions
 			assert.Equal(t, tt.perm, info.Mode().Perm())
 		})
@@ -96,12 +96,12 @@ func TestMkDir(t *testing.T) {
 func TestMkDir_FileExists(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "file-not-dir")
-	
+
 	// Create a file at the path
 	file, err := os.Create(filePath)
 	require.NoError(t, err)
 	file.Close()
-	
+
 	// Try to create directory with same path
 	err = MkDir(filePath, 0755)
 	// On some systems this might not fail, so we'll check if it's a file
@@ -120,7 +120,7 @@ func TestMkDir_PermissionDenied(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("Skipping permission test when running as root")
 	}
-	
+
 	// Try to create directory in root (should fail for non-root users)
 	err := MkDir("/root/test-oneauth-dir", 0755)
 	assert.Error(t, err)
@@ -136,14 +136,14 @@ func TestMkDir_RelativePath(t *testing.T) {
 	oldPwd, err := os.Getwd()
 	require.NoError(t, err)
 	defer os.Chdir(oldPwd)
-	
+
 	err = os.Chdir(tempDir)
 	require.NoError(t, err)
-	
+
 	relativePath := "relative-test-dir"
 	err = MkDir(relativePath, 0755)
 	assert.NoError(t, err)
-	
+
 	// Verify it was created
 	info, err := os.Stat(relativePath)
 	require.NoError(t, err)
@@ -154,25 +154,25 @@ func TestMkDir_RelativePath(t *testing.T) {
 func TestMkDir_ConcurrentCreation(t *testing.T) {
 	tempDir := t.TempDir()
 	targetDir := filepath.Join(tempDir, "concurrent-test")
-	
+
 	done := make(chan error, 2)
-	
+
 	// Run two concurrent MkDir operations
 	go func() {
 		done <- MkDir(targetDir, 0755)
 	}()
-	
+
 	go func() {
 		done <- MkDir(targetDir, 0755)
 	}()
-	
+
 	// Both should complete without error (one creates, one sees existing)
 	err1 := <-done
 	err2 := <-done
-	
+
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
-	
+
 	// Verify directory exists
 	info, err := os.Stat(targetDir)
 	require.NoError(t, err)

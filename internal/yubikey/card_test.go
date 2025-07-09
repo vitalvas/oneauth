@@ -65,7 +65,7 @@ func TestCards_NoYubikeys(t *testing.T) {
 	// This test will likely fail in CI/testing environments where no YubiKeys are present
 	// We mainly test that the function doesn't panic and returns appropriate results
 	cards, err := Cards()
-	
+
 	// Either we get an error (no cards found, no readers, etc.) or empty slice
 	if err != nil {
 		t.Logf("Cards() returned error (expected in test environments): %v", err)
@@ -80,7 +80,7 @@ func TestCards_NoYubikeys(t *testing.T) {
 func TestCardRead_InvalidName(t *testing.T) {
 	// Test with a card name that doesn't exist
 	card, err := cardRead("non-existent-card-name")
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, card)
 	assert.Contains(t, err.Error(), "failed to open card")
@@ -89,7 +89,7 @@ func TestCardRead_InvalidName(t *testing.T) {
 func TestCardRead_EmptyName(t *testing.T) {
 	// Test with empty card name
 	card, err := cardRead("")
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, card)
 }
@@ -105,7 +105,7 @@ func TestCard_StringConsistency(t *testing.T) {
 	// Test that String() is consistent
 	result1 := card.String()
 	result2 := card.String()
-	
+
 	assert.Equal(t, result1, result2)
 	assert.Equal(t, "Yubikey #123456", result1)
 }
@@ -113,7 +113,7 @@ func TestCard_StringConsistency(t *testing.T) {
 func TestCard_DefaultValues(t *testing.T) {
 	// Test zero-value card
 	var card Card
-	
+
 	assert.Equal(t, "", card.Name)
 	assert.Equal(t, uint32(0), card.Serial)
 	assert.Equal(t, "", card.Version)
@@ -122,12 +122,12 @@ func TestCard_DefaultValues(t *testing.T) {
 
 func TestCard_FieldAssignment(t *testing.T) {
 	card := Card{}
-	
+
 	// Test field assignment
 	card.Name = "Assigned Name"
 	card.Serial = 999888777
 	card.Version = "1.2.3"
-	
+
 	assert.Equal(t, "Assigned Name", card.Name)
 	assert.Equal(t, uint32(999888777), card.Serial)
 	assert.Equal(t, "1.2.3", card.Version)

@@ -18,20 +18,20 @@ func TestGenCertificateFor_WithECDSAKey(t *testing.T) {
 	// Generate test ECDSA key
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "test-user@example.com"
 	days := 365
-	
+
 	certBytes, err := GenCertificateFor(commonName, publicKey, days, nil)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
-	
+
 	// Parse and validate the certificate
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, commonName, cert.Subject.CommonName)
 	assert.True(t, cert.NotBefore.Before(time.Now().Add(time.Minute)))
 	assert.True(t, cert.NotAfter.After(time.Now().Add(time.Duration(days-1)*24*time.Hour)))
@@ -44,20 +44,20 @@ func TestGenCertificateFor_WithRSAKey(t *testing.T) {
 	// Generate test RSA key
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "rsa-user@example.com"
 	days := 180
-	
+
 	certBytes, err := GenCertificateFor(commonName, publicKey, days, nil)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
-	
+
 	// Parse and validate the certificate
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, commonName, cert.Subject.CommonName)
 	assert.True(t, cert.NotBefore.Before(time.Now().Add(time.Minute)))
 	assert.True(t, cert.NotAfter.After(time.Now().Add(time.Duration(days-1)*24*time.Hour)))
@@ -66,7 +66,7 @@ func TestGenCertificateFor_WithRSAKey(t *testing.T) {
 func TestGenCertificateFor_WithExtraNames(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "test-user"
 	extraNames := []pkix.AttributeTypeAndValue{
@@ -79,16 +79,16 @@ func TestGenCertificateFor_WithExtraNames(t *testing.T) {
 			Value: "Test Org",
 		},
 	}
-	
+
 	certBytes, err := GenCertificateFor(commonName, publicKey, 365, extraNames)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
-	
+
 	// Parse and validate the certificate
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, commonName, cert.Subject.CommonName)
 	// Note: ExtraNames are passed to the certificate but may not be directly accessible in parsed certificate
 }
@@ -96,10 +96,10 @@ func TestGenCertificateFor_WithExtraNames(t *testing.T) {
 func TestGenCertificateFor_DifferentDays(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "test-user"
-	
+
 	tests := []struct {
 		name string
 		days int
@@ -109,20 +109,20 @@ func TestGenCertificateFor_DifferentDays(t *testing.T) {
 		{"365 days", 365},
 		{"730 days", 730},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			certBytes, err := GenCertificateFor(commonName, publicKey, tt.days, nil)
-			
+
 			assert.NoError(t, err)
 			assert.NotEmpty(t, certBytes)
-			
+
 			cert, err := x509.ParseCertificate(certBytes)
 			require.NoError(t, err)
-			
+
 			expectedExpiry := time.Now().AddDate(0, 0, tt.days)
 			timeDiff := cert.NotAfter.Sub(expectedExpiry)
-			
+
 			// Allow some tolerance for test execution time
 			assert.True(t, timeDiff < time.Minute && timeDiff > -time.Minute,
 				"Certificate expiry time should be close to expected: got %v, expected %v",
@@ -134,25 +134,25 @@ func TestGenCertificateFor_DifferentDays(t *testing.T) {
 func TestGenCertificateFor_SerialNumberUnique(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "test-user"
-	
+
 	// Generate multiple certificates
 	var serialNumbers []string
 	for i := 0; i < 5; i++ {
 		certBytes, err := GenCertificateFor(commonName, publicKey, 365, nil)
 		require.NoError(t, err)
-		
+
 		cert, err := x509.ParseCertificate(certBytes)
 		require.NoError(t, err)
-		
+
 		serialNumbers = append(serialNumbers, cert.SerialNumber.String())
-		
+
 		// Small delay to ensure different timestamps
 		time.Sleep(time.Millisecond)
 	}
-	
+
 	// Check that all serial numbers are unique
 	serialSet := make(map[string]bool)
 	for _, serial := range serialNumbers {
@@ -164,16 +164,16 @@ func TestGenCertificateFor_SerialNumberUnique(t *testing.T) {
 func TestGenCertificateFor_CertificateStructure(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
 	commonName := "structure-test"
-	
+
 	certBytes, err := GenCertificateFor(commonName, publicKey, 365, nil)
 	require.NoError(t, err)
-	
+
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	// Verify certificate structure
 	assert.Equal(t, commonName, cert.Subject.CommonName)
 	assert.NotNil(t, cert.SerialNumber)
@@ -182,7 +182,7 @@ func TestGenCertificateFor_CertificateStructure(t *testing.T) {
 	assert.Contains(t, cert.ExtKeyUsage, x509.ExtKeyUsageClientAuth)
 	assert.Equal(t, x509.KeyUsageDigitalSignature|x509.KeyUsageCertSign, cert.KeyUsage)
 	assert.True(t, cert.BasicConstraintsValid)
-	
+
 	// Verify the public key matches
 	assert.Equal(t, publicKey, cert.PublicKey)
 }
@@ -190,34 +190,34 @@ func TestGenCertificateFor_CertificateStructure(t *testing.T) {
 func TestGenCertificateFor_EmptyCommonName(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
-	
+
 	certBytes, err := GenCertificateFor("", publicKey, 365, nil)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
-	
+
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	assert.Empty(t, cert.Subject.CommonName)
 }
 
 func TestGenCertificateFor_ZeroDays(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	
+
 	publicKey := privateKey.Public()
-	
+
 	certBytes, err := GenCertificateFor("test", publicKey, 0, nil)
-	
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, certBytes)
-	
+
 	cert, err := x509.ParseCertificate(certBytes)
 	require.NoError(t, err)
-	
+
 	// Certificate should be valid for exactly the same day (0 days)
 	assert.True(t, cert.NotAfter.After(cert.NotBefore) || cert.NotAfter.Equal(cert.NotBefore))
 	// When days=0, AddDate(0,0,0) gives same day but same time, so duration should be very small

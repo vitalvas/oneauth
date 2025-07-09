@@ -56,9 +56,9 @@ func TestGetUpdateManifestURL(t *testing.T) {
 func TestGetUpdateManifestURL_InvalidURL(t *testing.T) {
 	// Create a channel with invalid URL characters
 	invalidChannel := Channel("https://[invalid-url")
-	
+
 	result, err := getUpdateManifestURL("test-app", invalidChannel)
-	
+
 	assert.Error(t, err)
 	assert.Empty(t, result)
 }
@@ -115,7 +115,7 @@ func TestErrorConstants(t *testing.T) {
 func TestCheck_InvalidVersion(t *testing.T) {
 	// Test with invalid local version
 	result, err := Check("test-app", "invalid-version")
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
@@ -124,7 +124,7 @@ func TestCheck_NetworkError(t *testing.T) {
 	// Test with a version that should generate a network error
 	// (since we're testing against a real URL that might not exist)
 	result, err := Check("non-existent-app-12345", "v1.0.0")
-	
+
 	// We expect this to fail due to network/404 error
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -133,17 +133,17 @@ func TestCheck_NetworkError(t *testing.T) {
 func TestGetRemoteManifest_ErrorHandling(t *testing.T) {
 	// Test with invalid URL
 	manifest, err := getRemoteManifest("test-app", "invalid-url")
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, manifest)
 }
 
 func TestCheck_VersionComparison(t *testing.T) {
 	tests := []struct {
-		name            string
-		localVersion    string
-		expectError     bool
-		errorType       error
+		name         string
+		localVersion string
+		expectError  bool
+		errorType    error
 	}{
 		{
 			name:         "dev version",
@@ -156,20 +156,20 @@ func TestCheck_VersionComparison(t *testing.T) {
 			expectError:  true, // Network error expected
 		},
 		{
-			name:            "invalid version format",
-			localVersion:    "not-a-version",
-			expectError:     true,
+			name:         "invalid version format",
+			localVersion: "not-a-version",
+			expectError:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := Check("test-app", tt.localVersion)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
-				
+
 				if tt.errorType != nil {
 					assert.True(t, errors.Is(err, tt.errorType))
 				}

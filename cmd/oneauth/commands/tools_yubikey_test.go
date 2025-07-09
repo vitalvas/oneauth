@@ -17,12 +17,12 @@ func TestSelectYubiKey(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 0, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// This will fail because no YubiKeys are connected
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -35,12 +35,12 @@ func TestSelectYubiKey(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 999999, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// This will fail because the specified serial won't be found
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -72,12 +72,12 @@ func TestSelectYubiKey(t *testing.T) {
 						&cli.Uint64Flag{Name: "serial"},
 					},
 				}
-				
+
 				set := flag.NewFlagSet("test", 0)
 				set.Uint64("serial", tt.serial, "")
-				
+
 				ctx := cli.NewContext(app, set, nil)
-				
+
 				err := selectYubiKey(ctx)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedErr)
@@ -93,15 +93,15 @@ func TestSelectYubiKeyContextHandling(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 0, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// Verify initial state
 		assert.Equal(t, uint64(0), ctx.Uint64("serial"))
-		
+
 		// The function should fail because no YubiKeys are available
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -113,18 +113,18 @@ func TestSelectYubiKeyContextHandling(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		testCases := []uint64{0, 123456, 999999}
-		
+
 		for _, serial := range testCases {
 			t.Run(fmt.Sprintf("Serial_%d", serial), func(t *testing.T) {
 				set := flag.NewFlagSet("test", 0)
 				set.Uint64("serial", serial, "")
-				
+
 				ctx := cli.NewContext(app, set, nil)
-				
+
 				assert.Equal(t, serial, ctx.Uint64("serial"))
-				
+
 				// Function should error due to no YubiKeys
 				err := selectYubiKey(ctx)
 				assert.Error(t, err)
@@ -140,12 +140,12 @@ func TestSelectYubiKeyLogic(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 0, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// When serial is 0, it should try to find cards
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -159,12 +159,12 @@ func TestSelectYubiKeyLogic(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 123456, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// When serial is non-zero, it should look for specific card
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -180,12 +180,12 @@ func TestSelectYubiKeyEdgeCases(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", ^uint64(0), "") // Max uint64
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "YubiKey with serial")
@@ -197,7 +197,7 @@ func TestSelectYubiKeyEdgeCases(t *testing.T) {
 			4294967295, // Max uint32
 			4294967296, // Max uint32 + 1
 		}
-		
+
 		for _, serial := range largeSerials {
 			t.Run(fmt.Sprintf("Serial_%d", serial), func(t *testing.T) {
 				app := &cli.App{
@@ -205,12 +205,12 @@ func TestSelectYubiKeyEdgeCases(t *testing.T) {
 						&cli.Uint64Flag{Name: "serial"},
 					},
 				}
-				
+
 				set := flag.NewFlagSet("test", 0)
 				set.Uint64("serial", serial, "")
-				
+
 				ctx := cli.NewContext(app, set, nil)
-				
+
 				err := selectYubiKey(ctx)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), fmt.Sprintf("YubiKey with serial %d not found", serial))
@@ -228,12 +228,12 @@ func TestSelectYubiKeyFunctionBehavior(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 0, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		// Function should return an error (not nil)
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
@@ -246,12 +246,12 @@ func TestSelectYubiKeyFunctionBehavior(t *testing.T) {
 				&cli.Uint64Flag{Name: "serial"},
 			},
 		}
-		
+
 		set := flag.NewFlagSet("test", 0)
 		set.Uint64("serial", 123456, "")
-		
+
 		ctx := cli.NewContext(app, set, nil)
-		
+
 		err := selectYubiKey(ctx)
 		assert.Error(t, err)
 		assert.NotEmpty(t, err.Error())

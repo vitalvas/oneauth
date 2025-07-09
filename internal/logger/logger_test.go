@@ -13,7 +13,7 @@ import (
 
 func TestNew_WithoutFile(t *testing.T) {
 	log := New("")
-	
+
 	assert.NotNil(t, log)
 	assert.IsType(t, &logrus.Logger{}, log)
 	assert.True(t, log.ReportCaller)
@@ -24,13 +24,13 @@ func TestNew_WithoutFile(t *testing.T) {
 func TestNew_WithFile(t *testing.T) {
 	tempDir := t.TempDir()
 	logFile := filepath.Join(tempDir, "test.log")
-	
+
 	log := New(logFile)
-	
+
 	assert.NotNil(t, log)
 	assert.IsType(t, &logrus.Logger{}, log)
 	assert.True(t, log.ReportCaller)
-	
+
 	// Verify file was created
 	_, err := os.Stat(logFile)
 	assert.NoError(t, err)
@@ -39,15 +39,15 @@ func TestNew_WithFile(t *testing.T) {
 func TestNew_WithNestedDirectory(t *testing.T) {
 	tempDir := t.TempDir()
 	logFile := filepath.Join(tempDir, "nested", "dir", "test.log")
-	
+
 	log := New(logFile)
-	
+
 	assert.NotNil(t, log)
-	
+
 	// Verify nested directory and file were created
 	_, err := os.Stat(logFile)
 	assert.NoError(t, err)
-	
+
 	// Verify directory structure
 	dirPath := filepath.Dir(logFile)
 	info, err := os.Stat(dirPath)
@@ -57,10 +57,10 @@ func TestNew_WithNestedDirectory(t *testing.T) {
 
 func TestJSONFormatterConfiguration(t *testing.T) {
 	log := New("")
-	
+
 	formatter, ok := log.Formatter.(*logrus.JSONFormatter)
 	require.True(t, ok)
-	
+
 	assert.Equal(t, "@timestamp", formatter.FieldMap[logrus.FieldKeyTime])
 	assert.Equal(t, "@level", formatter.FieldMap[logrus.FieldKeyLevel])
 	assert.Equal(t, "@message", formatter.FieldMap[logrus.FieldKeyMsg])
@@ -71,7 +71,7 @@ func TestJSONFormatterConfiguration(t *testing.T) {
 func TestCallerPrettyfier(t *testing.T) {
 	log := New("")
 	formatter := log.Formatter.(*logrus.JSONFormatter)
-	
+
 	tests := []struct {
 		name         string
 		file         string
@@ -94,7 +94,7 @@ func TestCallerPrettyfier(t *testing.T) {
 			expectedFile: "/usr/local/go/src/runtime/proc.go:123",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			frame := &runtime.Frame{
@@ -102,9 +102,9 @@ func TestCallerPrettyfier(t *testing.T) {
 				Function: tt.function,
 				Line:     tt.line,
 			}
-			
+
 			function, file := formatter.CallerPrettyfier(frame)
-			
+
 			assert.Equal(t, tt.function, function)
 			assert.Equal(t, tt.expectedFile, file)
 		})
@@ -114,15 +114,15 @@ func TestCallerPrettyfier(t *testing.T) {
 func TestLogLevels(t *testing.T) {
 	tempDir := t.TempDir()
 	logFile := filepath.Join(tempDir, "test.log")
-	
+
 	log := New(logFile)
-	
+
 	// Test that we can write at different levels without panic
 	log.Debug("debug message")
 	log.Info("info message")
 	log.Warn("warn message")
 	log.Error("error message")
-	
+
 	// Verify log file has content
 	content, err := os.ReadFile(logFile)
 	require.NoError(t, err)

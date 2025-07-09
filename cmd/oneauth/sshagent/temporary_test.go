@@ -27,24 +27,24 @@ func TestTemporaryInterface(t *testing.T) {
 			message:   "temporary error",
 			temporary: true,
 		}
-		
+
 		// Test that it implements Temporary
 		assert.Implements(t, (*Temporary)(nil), err)
-		
+
 		// Test that it implements error
 		assert.Implements(t, (*error)(nil), err)
-		
+
 		// Test functionality
 		assert.Equal(t, "temporary error", err.Error())
 		assert.True(t, err.Temporary())
 	})
-	
+
 	t.Run("NonTemporaryError", func(t *testing.T) {
 		err := &MockTemporaryError{
 			message:   "permanent error",
 			temporary: false,
 		}
-		
+
 		assert.Implements(t, (*Temporary)(nil), err)
 		assert.Equal(t, "permanent error", err.Error())
 		assert.False(t, err.Temporary())
@@ -57,17 +57,17 @@ func TestTemporaryTypeAssertion(t *testing.T) {
 			message:   "test error",
 			temporary: true,
 		}
-		
+
 		if tempErr, ok := err.(Temporary); ok {
 			assert.True(t, tempErr.Temporary())
 		} else {
 			t.Error("Expected error to implement Temporary interface")
 		}
 	})
-	
+
 	t.Run("NonTemporaryError", func(t *testing.T) {
 		err := fmt.Errorf("regular error")
-		
+
 		if tempErr, ok := err.(Temporary); ok {
 			t.Errorf("Expected error to NOT implement Temporary interface, but got: %v", tempErr)
 		}
@@ -80,32 +80,32 @@ func TestTemporaryInterfaceUsage(t *testing.T) {
 		&MockTemporaryError{message: "temp2", temporary: false},
 		fmt.Errorf("regular error"),
 	}
-	
+
 	temporaryCount := 0
 	for _, err := range errors {
 		if tempErr, ok := err.(Temporary); ok && tempErr.Temporary() {
 			temporaryCount++
 		}
 	}
-	
+
 	assert.Equal(t, 1, temporaryCount)
 }
 
 func TestTemporaryInterface_EdgeCases(t *testing.T) {
 	t.Run("NilError", func(t *testing.T) {
 		var err error
-		
+
 		if tempErr, ok := err.(Temporary); ok {
 			t.Errorf("Expected nil error to NOT implement Temporary interface, but got: %v", tempErr)
 		}
 	})
-	
+
 	t.Run("EmptyMessage", func(t *testing.T) {
 		err := &MockTemporaryError{
 			message:   "",
 			temporary: true,
 		}
-		
+
 		assert.Equal(t, "", err.Error())
 		assert.True(t, err.Temporary())
 	})
@@ -146,7 +146,7 @@ func TestTemporaryHelperFunction(t *testing.T) {
 			expected: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := isTemporaryError(tt.err)

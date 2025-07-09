@@ -47,7 +47,7 @@ func TestSSHAgentLock(t *testing.T) {
 	t.Run("LockWithValidPassphrase", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		err := agent.Lock(passphrase)
 		assert.NoError(t, err)
 		assert.NotNil(t, agent.lockPassphrase)
@@ -55,7 +55,7 @@ func TestSSHAgentLock(t *testing.T) {
 
 	t.Run("LockWithNilPassphrase", func(t *testing.T) {
 		agent := &MockSSHAgent{}
-		
+
 		err := agent.Lock(nil)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "no private key")
@@ -65,11 +65,11 @@ func TestSSHAgentLock(t *testing.T) {
 	t.Run("LockAlreadyLocked", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Lock first time
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
-		
+
 		// Try to lock again
 		err = agent.Lock(passphrase)
 		assert.Error(t, err)
@@ -79,7 +79,7 @@ func TestSSHAgentLock(t *testing.T) {
 	t.Run("LockWithEmptyPassphrase", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("")
-		
+
 		err := agent.Lock(passphrase)
 		assert.NoError(t, err)
 		assert.NotNil(t, agent.lockPassphrase)
@@ -90,11 +90,11 @@ func TestSSHAgentUnlock(t *testing.T) {
 	t.Run("UnlockWithCorrectPassphrase", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Lock first
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
-		
+
 		// Unlock with correct passphrase
 		err = agent.Unlock(passphrase)
 		assert.NoError(t, err)
@@ -105,11 +105,11 @@ func TestSSHAgentUnlock(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
 		wrongPassphrase := []byte("wrong-passphrase")
-		
+
 		// Lock first
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
-		
+
 		// Unlock with wrong passphrase
 		err = agent.Unlock(wrongPassphrase)
 		assert.Error(t, err)
@@ -120,7 +120,7 @@ func TestSSHAgentUnlock(t *testing.T) {
 	t.Run("UnlockNotLocked", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Try to unlock without locking first
 		err := agent.Unlock(passphrase)
 		assert.Error(t, err)
@@ -130,11 +130,11 @@ func TestSSHAgentUnlock(t *testing.T) {
 	t.Run("UnlockWithNilPassphrase", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Lock first
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
-		
+
 		// Unlock with nil passphrase
 		err = agent.Unlock(nil)
 		assert.Error(t, err)
@@ -147,13 +147,13 @@ func TestSSHAgentLockUnlockCycle(t *testing.T) {
 	t.Run("MultipleLockUnlockCycles", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		for i := 0; i < 3; i++ {
 			// Lock
 			err := agent.Lock(passphrase)
 			require.NoError(t, err)
 			assert.NotNil(t, agent.lockPassphrase)
-			
+
 			// Unlock
 			err = agent.Unlock(passphrase)
 			require.NoError(t, err)
@@ -163,18 +163,18 @@ func TestSSHAgentLockUnlockCycle(t *testing.T) {
 
 	t.Run("LockUnlockWithDifferentPassphrases", func(t *testing.T) {
 		agent := &MockSSHAgent{}
-		
+
 		passphrases := [][]byte{
 			[]byte("passphrase1"),
 			[]byte("passphrase2"),
 			[]byte("passphrase3"),
 		}
-		
+
 		for _, passphrase := range passphrases {
 			// Lock with current passphrase
 			err := agent.Lock(passphrase)
 			require.NoError(t, err)
-			
+
 			// Unlock with same passphrase
 			err = agent.Unlock(passphrase)
 			require.NoError(t, err)
@@ -186,15 +186,15 @@ func TestSSHAgentLockState(t *testing.T) {
 	t.Run("CheckLockState", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Initially unlocked
 		assert.Nil(t, agent.lockPassphrase)
-		
+
 		// Lock
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
 		assert.NotNil(t, agent.lockPassphrase)
-		
+
 		// Unlock
 		err = agent.Unlock(passphrase)
 		require.NoError(t, err)
@@ -204,14 +204,14 @@ func TestSSHAgentLockState(t *testing.T) {
 	t.Run("PassphraseNotExposed", func(t *testing.T) {
 		agent := &MockSSHAgent{}
 		passphrase := []byte("test-passphrase")
-		
+
 		// Lock
 		err := agent.Lock(passphrase)
 		require.NoError(t, err)
-		
+
 		// Modify original passphrase
 		passphrase[0] = 'X'
-		
+
 		// Should still be able to unlock with original passphrase
 		err = agent.Unlock([]byte("test-passphrase"))
 		assert.NoError(t, err)
@@ -226,10 +226,10 @@ func TestSSHAgentEdgeCases(t *testing.T) {
 		for i := range longPassphrase {
 			longPassphrase[i] = byte('a' + (i % 26))
 		}
-		
+
 		err := agent.Lock(longPassphrase)
 		assert.NoError(t, err)
-		
+
 		err = agent.Unlock(longPassphrase)
 		assert.NoError(t, err)
 	})
@@ -238,10 +238,10 @@ func TestSSHAgentEdgeCases(t *testing.T) {
 		agent := &MockSSHAgent{}
 		// Create a binary passphrase with null bytes
 		binaryPassphrase := []byte{0x00, 0x01, 0x02, 0xFF, 0xFE, 0xFD}
-		
+
 		err := agent.Lock(binaryPassphrase)
 		assert.NoError(t, err)
-		
+
 		err = agent.Unlock(binaryPassphrase)
 		assert.NoError(t, err)
 	})

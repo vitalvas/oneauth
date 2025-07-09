@@ -154,6 +154,21 @@ agent_log_path: "/var/log/agent.log"
 
 func TestLoad(t *testing.T) {
 	t.Run("ValidConfigFile", func(t *testing.T) {
+		// Set up temporary home directory
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		// Create .oneauth directory in temp home
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		// Temporarily set HOME env var
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
 		// Create a temporary config file
 		tmpFile, err := os.CreateTemp("", "config-*.yaml")
 		require.NoError(t, err)
@@ -177,7 +192,7 @@ keyring:
 
 		config, err := Load(tmpFile.Name())
 		require.NoError(t, err)
-		
+
 		assert.NotEqual(t, uuid.Nil, config.AgentID)
 		assert.Equal(t, "/tmp/test-control.sock", config.ControlSocketPath)
 		assert.Equal(t, "/tmp/test-agent.log", config.AgentLogPath)
@@ -189,6 +204,21 @@ keyring:
 	})
 
 	t.Run("EmptyConfigFile", func(t *testing.T) {
+		// Set up temporary home directory
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		// Create .oneauth directory in temp home
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		// Temporarily set HOME env var
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
 		// Create an empty config file
 		tmpFile, err := os.CreateTemp("", "config-*.yaml")
 		require.NoError(t, err)
@@ -201,7 +231,7 @@ keyring:
 
 		config, err := Load(tmpFile.Name())
 		require.NoError(t, err)
-		
+
 		// Should have default values and generated agent ID
 		assert.NotEqual(t, uuid.Nil, config.AgentID)
 		assert.NotEmpty(t, config.ControlSocketPath)
@@ -295,7 +325,7 @@ func TestLoadOrCreateAgentID(t *testing.T) {
 		agentID, err := LoadOrCreateAgentID()
 		require.NoError(t, err)
 		assert.NotEqual(t, uuid.Nil, agentID)
-		
+
 		// Verify a new ID was created
 		newContent, err := os.ReadFile(agentIDPath)
 		require.NoError(t, err)

@@ -18,42 +18,42 @@ func TestListenAndServe(t *testing.T) {
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Use invalid path (directory that doesn't exist)
 		invalidPath := "/nonexistent/directory/socket"
-		
+
 		err := rpcServer.ListenAndServe(context.Background(), invalidPath)
 		assert.Error(t, err)
 	})
-	
+
 	t.Run("ValidSocketPathCreation", func(t *testing.T) {
 		// Create temporary directory
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Run in goroutine since ListenAndServe blocks
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Check that socket was created
 		_, err = os.Stat(socketPath)
 		assert.NoError(t, err)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case err := <-errChan:
@@ -71,30 +71,30 @@ func TestListenAndServeCleanup(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		// Create a file at socket path first
 		file, err := os.Create(socketPath)
 		assert.NoError(t, err)
 		file.Close()
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:
@@ -111,30 +111,30 @@ func TestListenAndServeHTTPHandling(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Verify server was created
 		server := rpcServer.GetServer()
 		assert.NotNil(t, server)
 		assert.NotNil(t, server.Handler)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:
@@ -151,29 +151,29 @@ func TestListenAndServeTimeout(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Verify timeout is set
 		server := rpcServer.GetServer()
 		assert.Equal(t, 2*time.Second, server.ReadHeaderTimeout)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:
@@ -190,30 +190,30 @@ func TestListenAndServePermissions(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Check socket permissions
 		info, err := os.Stat(socketPath)
 		assert.NoError(t, err)
 		assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:
@@ -230,27 +230,27 @@ func TestListenAndServeContext(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		ctx := context.Background()
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(ctx, socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:
@@ -266,17 +266,17 @@ func TestListenAndServeErrorHandling(t *testing.T) {
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Use invalid path
 		err := rpcServer.ListenAndServe(context.Background(), "/invalid/path/socket")
 		assert.Error(t, err)
 	})
-	
+
 	t.Run("ChmodError", func(t *testing.T) {
 		rpcServer := &RPCServer{
 			log: logrus.New(),
 		}
-		
+
 		// Use a clearly invalid socket path
 		err := rpcServer.ListenAndServe(context.Background(), "/proc/invalid/socket")
 		assert.Error(t, err)
@@ -289,32 +289,32 @@ func TestListenAndServeIntegration(t *testing.T) {
 		tempDir, err := os.MkdirTemp("", "rpcserver_test")
 		assert.NoError(t, err)
 		defer os.RemoveAll(tempDir)
-		
+
 		socketPath := filepath.Join(tempDir, "test.sock")
-		
+
 		// Create full RPC server
 		sshAgent := &sshagent.SSHAgent{}
 		log := logrus.New()
 		rpcServer := New(sshAgent, log)
-		
+
 		// Run in goroutine
 		errChan := make(chan error)
 		go func() {
 			errChan <- rpcServer.ListenAndServe(context.Background(), socketPath)
 		}()
-		
+
 		// Give it time to start
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Verify everything is set up
 		server := rpcServer.GetServer()
 		assert.NotNil(t, server)
 		assert.NotNil(t, rpcServer.SSHAgent)
 		assert.NotNil(t, rpcServer.log)
-		
+
 		// Shutdown the server
 		rpcServer.Shutdown()
-		
+
 		// Wait for completion
 		select {
 		case <-errChan:

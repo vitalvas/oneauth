@@ -44,14 +44,14 @@ func TestUnixCreds_Structure(t *testing.T) {
 		PID: 12345,
 		UID: 1000,
 	}
-	
+
 	assert.Equal(t, 12345, creds.PID)
 	assert.Equal(t, 1000, creds.UID)
 }
 
 func TestCheckCreds_EdgeCases(t *testing.T) {
 	currentUID := os.Getuid()
-	
+
 	tests := []struct {
 		name        string
 		creds       *UnixCreds
@@ -102,7 +102,7 @@ func TestCheckCreds_EdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := CheckCreds(tt.creds)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "connection from another user")
@@ -145,7 +145,7 @@ func TestUnixSocketCreds_WithUnixSocket(t *testing.T) {
 	// Create a temporary Unix socket with shorter path
 	tempDir := t.TempDir()
 	socketPath := filepath.Join(tempDir, "test.sock")
-	
+
 	// Ensure the socket path is reasonable length
 	if len(socketPath) > 100 {
 		t.Skip("Socket path too long for this system")
@@ -177,7 +177,7 @@ func TestUnixSocketCreds_WithUnixSocket(t *testing.T) {
 
 	// Test Unix socket credentials
 	creds, err := UnixSocketCreds(serverConn)
-	
+
 	// The exact behavior depends on the platform
 	// On some systems this might fail due to permission or syscall issues
 	if err != nil {
@@ -187,12 +187,12 @@ func TestUnixSocketCreds_WithUnixSocket(t *testing.T) {
 
 	// If it succeeds, validate the credentials make sense
 	t.Logf("Got credentials: UID=%d, PID=%d", creds.UID, creds.PID)
-	
+
 	// UID should be reasonable (our current UID or similar)
 	if creds.UID >= 0 {
 		assert.True(t, creds.UID >= 0, "UID should be non-negative")
 	}
-	
+
 	// PID should be reasonable if set
 	if creds.PID > 0 {
 		assert.True(t, creds.PID > 0, "PID should be positive if set")
@@ -202,19 +202,19 @@ func TestUnixSocketCreds_WithUnixSocket(t *testing.T) {
 func TestCheckCreds_ErrorMessage(t *testing.T) {
 	currentUID := os.Getuid()
 	differentUID := currentUID + 1000
-	
+
 	if differentUID <= 0 {
 		differentUID = currentUID + 1
 	}
-	
+
 	creds := &UnixCreds{
 		UID: differentUID,
 		PID: os.Getpid(),
 	}
-	
+
 	err := CheckCreds(creds)
 	require.Error(t, err)
-	
+
 	expectedMsg := "connection from another user (except root) is prohibited"
 	assert.Contains(t, err.Error(), expectedMsg)
 	assert.Contains(t, err.Error(), "!= ")
@@ -223,7 +223,7 @@ func TestCheckCreds_ErrorMessage(t *testing.T) {
 func TestUnixSocketCreds_InvalidConnection(t *testing.T) {
 	// Test with nil connection
 	creds, err := UnixSocketCreds(nil)
-	
+
 	// This should either return error or handle gracefully
 	if err == nil {
 		// If no error, creds should have default values

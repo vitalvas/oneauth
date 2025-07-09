@@ -49,7 +49,7 @@ func TestErrorComparison(t *testing.T) {
 	assert.True(t, errors.Is(ErrOperationUnsupported, ErrOperationUnsupported))
 	assert.True(t, errors.Is(ErrNoPrivateKey, ErrNoPrivateKey))
 	assert.True(t, errors.Is(ErrAgentLocked, ErrAgentLocked))
-	
+
 	// Test that different errors are not equal
 	assert.False(t, errors.Is(ErrOperationUnsupported, ErrNoPrivateKey))
 	assert.False(t, errors.Is(ErrNoPrivateKey, ErrAgentLocked))
@@ -61,7 +61,7 @@ func TestErrorWrapping(t *testing.T) {
 	wrappedErr1 := errors.New("wrapper: " + ErrOperationUnsupported.Error())
 	wrappedErr2 := errors.New("wrapper: " + ErrNoPrivateKey.Error())
 	wrappedErr3 := errors.New("wrapper: " + ErrAgentLocked.Error())
-	
+
 	assert.Contains(t, wrappedErr1.Error(), ErrOperationUnsupported.Error())
 	assert.Contains(t, wrappedErr2.Error(), ErrNoPrivateKey.Error())
 	assert.Contains(t, wrappedErr3.Error(), ErrAgentLocked.Error())
@@ -74,7 +74,7 @@ func TestErrorUniqueness(t *testing.T) {
 		ErrNoPrivateKey,
 		ErrAgentLocked,
 	}
-	
+
 	messages := make(map[string]bool)
 	for _, err := range errors {
 		msg := err.Error()
@@ -88,7 +88,7 @@ func TestErrorStringRepresentation(t *testing.T) {
 	assert.NotEmpty(t, ErrOperationUnsupported.Error())
 	assert.NotEmpty(t, ErrNoPrivateKey.Error())
 	assert.NotEmpty(t, ErrAgentLocked.Error())
-	
+
 	// Test that they're not empty strings
 	assert.NotEqual(t, "", ErrOperationUnsupported.Error())
 	assert.NotEqual(t, "", ErrNoPrivateKey.Error())
