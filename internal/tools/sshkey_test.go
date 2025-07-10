@@ -63,7 +63,7 @@ func TestGetSSHPublicKey(t *testing.T) {
 }
 
 func TestSSHFingerprint(t *testing.T) {
-	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(samplePublicKey))
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(samplePublicKey)) //nolint:dogsled
 	if err != nil {
 		t.Fatal(err)
 	}

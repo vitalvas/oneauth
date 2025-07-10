@@ -54,9 +54,25 @@ func New(serial uint32, log *logrus.Logger, config *config.Config) (*SSHAgent, e
 }
 
 func (a *SSHAgent) Close() error {
-	a.softKeys.RemoveAll()
+	if a.softKeys != nil {
+		a.softKeys.RemoveAll()
+	}
 
 	return nil
+}
+
+// getListener safely returns the current listener
+func (a *SSHAgent) getListener() net.Listener {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	return a.agentListener
+}
+
+// setListener safely sets the listener
+func (a *SSHAgent) setListener(listener net.Listener) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	a.agentListener = listener
 }
 
 func (a *SSHAgent) handleConn(conn net.Conn) {
@@ -89,8 +105,8 @@ func (a *SSHAgent) Shutdown() error {
 		}
 	}
 
-	if a.agentListener != nil {
-		if err := a.agentListener.Close(); err != nil {
+	if listener := a.getListener(); listener != nil {
+		if err := listener.Close(); err != nil {
 			return err
 		}
 	}

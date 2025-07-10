@@ -35,12 +35,16 @@ func (s *RPCServer) ListenAndServe(_ context.Context, socketPath string) error {
 		fmt.Fprintf(w, "hello world from oneauth agent")
 	})
 
-	s.server = &http.Server{
+	server := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 2 * time.Second,
 	}
 
-	if err := s.server.Serve(listener); err != nil && err != http.ErrServerClosed {
+	s.mu.Lock()
+	s.server = server
+	s.mu.Unlock()
+
+	if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 
