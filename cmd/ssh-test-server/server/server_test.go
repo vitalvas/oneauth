@@ -1,236 +1,329 @@
 package server
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"encoding/json"
+	"fmt"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vitalvas/oneauth/internal/buildinfo"
+	"github.com/stretchr/testify/require"
+	"github.com/vitalvas/oneauth/internal/mock"
 	"golang.org/x/crypto/ssh"
 )
 
-func TestServerStruct(t *testing.T) {
-	t.Run("ServerCreation", func(t *testing.T) {
+// Test core server functionality
+func TestServer(t *testing.T) {
+	t.Run("BasicOperations", func(t *testing.T) {
 		srv := &Server{}
-
-		// Test that server can be created
 		assert.NotNil(t, srv)
 		assert.Nil(t, srv.serverURL)
 		assert.Nil(t, srv.sshConfig)
-	})
-}
 
-func TestServerFields(t *testing.T) {
-	t.Run("ServerFields", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test field access
-		assert.IsType(t, (*url.URL)(nil), srv.serverURL)
-		assert.IsType(t, (*ssh.ServerConfig)(nil), srv.sshConfig)
-	})
-}
-
-func TestServerConfiguration(t *testing.T) {
-	t.Run("ServerURLSetting", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test URL setting
-		testURL, err := url.Parse("http://example.com:8080")
-		assert.NoError(t, err)
-
-		srv.serverURL = testURL
-		assert.Equal(t, testURL, srv.serverURL)
-		assert.Equal(t, "example.com:8080", srv.serverURL.Host)
-		assert.Equal(t, "8080", srv.serverURL.Port())
-	})
-
-	t.Run("SSHConfigSetting", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test SSH config setting
-		config := &ssh.ServerConfig{
-			ServerVersion: "SSH-2.0-Test",
-		}
-
-		srv.sshConfig = config
-		assert.Equal(t, config, srv.sshConfig)
-		assert.Equal(t, "SSH-2.0-Test", srv.sshConfig.ServerVersion)
-	})
-}
-
-func TestServerMethodsExist(t *testing.T) {
-	t.Run("MethodsExist", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test that methods exist (we can't call them without setup)
-		assert.IsType(t, (*Server)(nil), srv)
-
-		// Test that struct has the expected methods by checking if they can be assigned
-		_ = srv.runServer
-	})
-}
-
-func TestServerURLParsing(t *testing.T) {
-	t.Run("ValidURL", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test valid URL parsing
-		testURL := "http://127.0.0.1:8080"
-		parsedURL, err := url.Parse(testURL)
-		assert.NoError(t, err)
-
-		srv.serverURL = parsedURL
+		// Test URL parsing
+		srv.serverURL, _ = url.Parse("http://test.example.com:9000")
 		assert.Equal(t, "http", srv.serverURL.Scheme)
-		assert.Equal(t, "127.0.0.1:8080", srv.serverURL.Host)
+		assert.Equal(t, "test.example.com:9000", srv.serverURL.Host)
+
+		// Test invalid URL
+		_, err := url.Parse("://invalid-url") //nolint:staticcheck // Testing invalid URL parsing
+		assert.Error(t, err)
+	})
+}
+
+// Test SSH authentication
+func TestSSHAuthentication(t *testing.T) {
+	srv := &Server{
+		serverURL: &url.URL{Scheme: "http", Host: "localhost:8080"},
+	}
+
+	mockConn := &mockConnMetadata{
+		user:       "testuser",
+		remoteAddr: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 12345},
+		sessionID:  []byte("test-session"),
+	}
+
+	t.Run("PasswordAuth_Success", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			response := YubikeyOTPVerifyResponse{OTP: "testotp", Serial: 12345}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+		}))
+		defer mockServer.Close()
+
+		mockURL, _ := url.Parse(mockServer.URL)
+		srv.serverURL = mockURL
+
+		perms, err := srv.sshPasswordCallback(mockConn, []byte("testotp"))
+
+		require.NoError(t, err)
+		assert.NotNil(t, perms)
+		assert.Equal(t, "yubikey-otp", perms.Extensions["auth-type"])
+		assert.Equal(t, "12345", perms.Extensions["yubikey-serial"])
 	})
 
-	t.Run("InvalidURL", func(t *testing.T) {
-		// Test invalid URL parsing
-		invalidURL := "not-a-valid-url"
-		parsedURL, err := url.Parse(invalidURL)
+	t.Run("PasswordAuth_Failure", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer mockServer.Close()
 
-		// url.Parse is very lenient, so this might not error
-		if err == nil {
-			assert.NotNil(t, parsedURL)
-		} else {
-			assert.Error(t, err)
+		mockURL, _ := url.Parse(mockServer.URL)
+		srv.serverURL = mockURL
+
+		perms, err := srv.sshPasswordCallback(mockConn, []byte("invalid"))
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+
+	t.Run("PublicKeyAuth", func(t *testing.T) {
+		privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+		require.NoError(t, err)
+
+		publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+		require.NoError(t, err)
+
+		// Should reject regular public keys (only certificates supported)
+		perms, err := srv.sshPublicKeyCallback(mockConn, publicKey)
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+		assert.Contains(t, err.Error(), "only SSH certificates are supported")
+	})
+}
+
+// Test key generation
+func TestKeyGeneration(t *testing.T) {
+	t.Run("GenerateHostKey", func(t *testing.T) {
+		signer, err := generatePrivateHostKey()
+
+		require.NoError(t, err)
+		assert.NotNil(t, signer)
+		assert.Equal(t, "ecdsa-sha2-nistp256", signer.PublicKey().Type())
+
+		// Test signing capability
+		data := []byte("test data")
+		signature, err := signer.Sign(rand.Reader, data)
+		require.NoError(t, err)
+		assert.NotNil(t, signature)
+	})
+
+	t.Run("MultipleKeys", func(t *testing.T) {
+		key1, err := generatePrivateHostKey()
+		require.NoError(t, err)
+
+		key2, err := generatePrivateHostKey()
+		require.NoError(t, err)
+
+		// Keys should be different
+		assert.NotEqual(t, key1.PublicKey().Marshal(), key2.PublicKey().Marshal())
+	})
+}
+
+// Test SSH channel handling
+func TestChannelHandling(t *testing.T) {
+	srv := &Server{
+		sshConfig: &ssh.ServerConfig{ServerVersion: "SSH-2.0-Test"},
+	}
+
+	hostKey, err := generatePrivateHostKey()
+	require.NoError(t, err)
+	srv.sshConfig.AddHostKey(hostKey)
+
+	t.Run("ChannelTypes", func(t *testing.T) {
+		testCases := []struct {
+			channelType  string
+			expectReject bool
+		}{
+			{"session", false},
+			{"direct-tcpip", true},
+			{"unknown", true},
+		}
+
+		for _, tc := range testCases {
+			mockChannel := mock.NewSSHChannel(tc.channelType).
+				WithConn(mock.NewChannelConn()).
+				WithRequests(mock.MakeRequestSlice([]*ssh.Request{}))
+
+			srv.handleChannels(mock.MakeNewChannelSlice([]*mock.NewChannel{mockChannel}))
+
+			if tc.expectReject {
+				assert.True(t, mockChannel.IsRejected())
+				assert.Equal(t, ssh.UnknownChannelType, mockChannel.RejectReason())
+			} else {
+				assert.True(t, mockChannel.IsAccepted())
+			}
 		}
 	})
-}
 
-func TestServerSSHConfig(t *testing.T) {
-	t.Run("SSHConfigCreation", func(t *testing.T) {
-		srv := &Server{}
+	t.Run("SessionAcceptFailure", func(t *testing.T) {
+		mockChannel := mock.NewSSHChannel("session").WithAcceptError(fmt.Errorf("accept failed"))
+		err := srv.handleChannelSession(mockChannel)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "could not accept channel")
+	})
 
-		// Test SSH config creation
-		config := &ssh.ServerConfig{
-			ServerVersion: "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
-		}
-
-		srv.sshConfig = config
-		assert.NotNil(t, srv.sshConfig)
-		assert.Contains(t, srv.sshConfig.ServerVersion, "OneAuth")
-		assert.Contains(t, srv.sshConfig.ServerVersion, "SSH-2.0")
+	t.Run("RequestHandling", func(_ *testing.T) {
+		mockReq := &ssh.Request{Type: "keepalive", WantReply: false, Payload: []byte("test")}
+		srv.handleRequests(mock.MakeRequestSlice([]*ssh.Request{mockReq}))
+		// Should handle gracefully without error
 	})
 }
 
-func TestServerConstants(t *testing.T) {
-	t.Run("DefaultValues", func(t *testing.T) {
-		// Test default values that would be used
-		defaultURL := "http://127.0.0.1:8080"
-		defaultServerVersion := "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)"
-
-		assert.NotEmpty(t, defaultURL)
-		assert.NotEmpty(t, defaultServerVersion)
-		assert.Contains(t, defaultURL, "127.0.0.1")
-		assert.Contains(t, defaultServerVersion, "OneAuth")
-	})
-}
-
-func TestServerBuildInfo(t *testing.T) {
-	t.Run("BuildInfoIntegration", func(t *testing.T) {
-		// Test that buildinfo is accessible
-		version := buildinfo.Version
-
-		// Version might be empty in test environment
-		assert.NotNil(t, version)
-		assert.IsType(t, "", version)
-	})
-}
-
-func TestServerAppConfig(t *testing.T) {
-	t.Run("AppConfigValues", func(t *testing.T) {
-		// Test values that would be used in the app config
-		appName := "oneauth-ssh-test-server"
-		defaultPort := ":2022"
-
-		assert.NotEmpty(t, appName)
-		assert.NotEmpty(t, defaultPort)
-		assert.Contains(t, appName, "oneauth")
-		assert.Contains(t, defaultPort, "2022")
-	})
-}
-
-func TestServerNetworking(t *testing.T) {
-	t.Run("NetworkingConstants", func(t *testing.T) {
-		// Test networking constants
-		defaultPort := ":2022"
-		protocol := "tcp"
-
-		assert.Equal(t, ":2022", defaultPort)
-		assert.Equal(t, "tcp", protocol)
-	})
-}
-
-func TestServerStructFields(t *testing.T) {
-	t.Run("FieldTypes", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test that fields can be set to expected types
-		srv.serverURL = &url.URL{
-			Scheme: "http",
-			Host:   "localhost:8080",
-		}
-
-		srv.sshConfig = &ssh.ServerConfig{
+// Test connection handling
+func TestConnectionHandling(t *testing.T) {
+	srv := &Server{
+		sshConfig: &ssh.ServerConfig{
 			ServerVersion: "SSH-2.0-Test",
+			NoClientAuth:  true,
+		},
+	}
+
+	hostKey, err := generatePrivateHostKey()
+	require.NoError(t, err)
+	srv.sshConfig.AddHostKey(hostKey)
+
+	t.Run("InvalidConnection", func(_ *testing.T) {
+		server, client := net.Pipe()
+		defer server.Close()
+		defer client.Close()
+
+		client.Close() // Close immediately to cause handshake failure
+		srv.handleConn(server)
+		// Should handle gracefully without panicking
+	})
+
+	t.Run("ConcurrentConnections", func(_ *testing.T) {
+		var wg sync.WaitGroup
+
+		for i := 0; i < 3; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				server, client := net.Pipe()
+				defer server.Close()
+				defer client.Close()
+
+				go srv.handleConn(server)
+				time.Sleep(5 * time.Millisecond)
+				client.Close()
+			}()
 		}
 
-		assert.IsType(t, &url.URL{}, srv.serverURL)
-		assert.IsType(t, &ssh.ServerConfig{}, srv.sshConfig)
+		wg.Wait()
+		// Test passes if no deadlocks or panics occur
 	})
 }
 
-func TestServerInitialization(t *testing.T) {
-	t.Run("ZeroValues", func(t *testing.T) {
-		srv := &Server{}
+// Test error scenarios
+func TestErrorHandling(t *testing.T) {
+	srv := &Server{}
+	mockConn := &mockConnMetadata{
+		user:       "testuser",
+		remoteAddr: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 12345},
+		sessionID:  []byte("test-session"),
+	}
 
-		// Test zero values
-		assert.Nil(t, srv.serverURL)
-		assert.Nil(t, srv.sshConfig)
+	t.Run("NetworkError", func(t *testing.T) {
+		srv.serverURL = &url.URL{Scheme: "http", Host: "nonexistent.invalid:9999"}
+		perms, err := srv.sshPasswordCallback(mockConn, []byte("testotp"))
+		assert.Error(t, err)
+		assert.Nil(t, perms)
 	})
 
-	t.Run("NonZeroValues", func(t *testing.T) {
-		srv := &Server{
-			serverURL: &url.URL{Host: "example.com"},
-			sshConfig: &ssh.ServerConfig{ServerVersion: "SSH-2.0-Test"},
+	t.Run("InvalidJSON", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte("invalid json"))
+		}))
+		defer mockServer.Close()
+
+		mockURL, _ := url.Parse(mockServer.URL)
+		srv.serverURL = mockURL
+
+		perms, err := srv.sshPasswordCallback(mockConn, []byte("testotp"))
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+
+	t.Run("HTTPRedirect", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusFound)
+		}))
+		defer mockServer.Close()
+
+		mockURL, _ := url.Parse(mockServer.URL)
+		srv.serverURL = mockURL
+
+		perms, err := srv.sshPasswordCallback(mockConn, []byte("testotp"))
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+}
+
+// Test utilities and edge cases
+func TestUtilities(t *testing.T) {
+	t.Run("YubikeyOTPResponse", func(t *testing.T) {
+		response := YubikeyOTPVerifyResponse{OTP: "test-otp", Serial: 12345}
+
+		data, err := json.Marshal(response)
+		require.NoError(t, err)
+
+		var parsed YubikeyOTPVerifyResponse
+		err = json.Unmarshal(data, &parsed)
+		require.NoError(t, err)
+
+		assert.Equal(t, "test-otp", parsed.OTP)
+		assert.Equal(t, 12345, parsed.Serial)
+	})
+
+	t.Run("BannerCallback", func(t *testing.T) {
+		bannerCallback := func(conn ssh.ConnMetadata) string {
+			remote, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+			return fmt.Sprintf("Welcome %s from %s!\n", conn.User(), remote)
 		}
 
-		// Test non-zero values
-		assert.NotNil(t, srv.serverURL)
-		assert.NotNil(t, srv.sshConfig)
-		assert.Equal(t, "example.com", srv.serverURL.Host)
-		assert.Equal(t, "SSH-2.0-Test", srv.sshConfig.ServerVersion)
+		mockConn := &mockConnMetadata{
+			user:       "testuser",
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("192.168.1.100"), Port: 54321},
+		}
+
+		banner := bannerCallback(mockConn)
+		assert.Contains(t, banner, "Welcome testuser from 192.168.1.100!")
+	})
+
+	t.Run("URLHandling", func(t *testing.T) {
+		baseURL, err := url.Parse("http://example.com:8080/base")
+		require.NoError(t, err)
+
+		relativeURL, err := url.Parse("/api/v1/yubikey/otp/verify")
+		require.NoError(t, err)
+
+		resolved := baseURL.ResolveReference(relativeURL)
+		assert.Equal(t, "http://example.com:8080/api/v1/yubikey/otp/verify", resolved.String())
 	})
 }
 
-func TestServerURLOperations(t *testing.T) {
-	t.Run("URLOperations", func(t *testing.T) {
-		srv := &Server{}
-
-		// Test URL operations
-		testURL := "https://oneauth.example.com:9000/api"
-		parsedURL, err := url.Parse(testURL)
-		assert.NoError(t, err)
-
-		srv.serverURL = parsedURL
-
-		assert.Equal(t, "https", srv.serverURL.Scheme)
-		assert.Equal(t, "oneauth.example.com:9000", srv.serverURL.Host)
-		assert.Equal(t, "/api", srv.serverURL.Path)
-		assert.Equal(t, "9000", srv.serverURL.Port())
-	})
+// Mock implementations for testing
+type mockConnMetadata struct {
+	user       string
+	remoteAddr net.Addr
+	sessionID  []byte
 }
 
-func TestServerConfigDefaults(t *testing.T) {
-	t.Run("ConfigurationDefaults", func(t *testing.T) {
-		// Test default configuration values
-		defaultServerURL := "http://127.0.0.1:8080"
-		defaultListenPort := ":2022"
-		expectedServerVersion := "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)"
-
-		assert.Equal(t, "http://127.0.0.1:8080", defaultServerURL)
-		assert.Equal(t, ":2022", defaultListenPort)
-		assert.Contains(t, expectedServerVersion, "OneAuth")
-	})
+func (m *mockConnMetadata) User() string          { return m.user }
+func (m *mockConnMetadata) SessionID() []byte     { return m.sessionID }
+func (m *mockConnMetadata) ClientVersion() []byte { return []byte("SSH-2.0-Test") }
+func (m *mockConnMetadata) ServerVersion() []byte { return []byte("SSH-2.0-OneAuth") }
+func (m *mockConnMetadata) RemoteAddr() net.Addr  { return m.remoteAddr }
+func (m *mockConnMetadata) LocalAddr() net.Addr {
+	return &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 2022}
 }
