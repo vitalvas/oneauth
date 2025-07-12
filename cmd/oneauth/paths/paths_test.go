@@ -39,7 +39,7 @@ func TestControlSocket(t *testing.T) {
 	actual, err := ControlSocket()
 	assert.Nil(t, err, "Error getting control socket path: %v", err)
 
-	expected := filepath.Join(home, oneauthDir, "control.sock")
+	expected := filepath.Join(home, oneauthDir, "oneauth-ctrl.sock")
 	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }
 

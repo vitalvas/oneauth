@@ -20,7 +20,7 @@ func TestNewChannel(t *testing.T) {
 		conn := NewChannelConn()
 		requests := MakeRequestSlice([]*ssh.Request{})
 		data := []byte("test data")
-		
+
 		channel := NewSSHChannel("session").
 			WithConn(conn).
 			WithRequests(requests).
@@ -33,7 +33,7 @@ func TestNewChannel(t *testing.T) {
 	t.Run("Accept", func(t *testing.T) {
 		conn := NewChannelConn()
 		requests := MakeRequestSlice([]*ssh.Request{})
-		
+
 		channel := NewSSHChannel("session").
 			WithConn(conn).
 			WithRequests(requests)
@@ -57,7 +57,7 @@ func TestNewChannel(t *testing.T) {
 
 	t.Run("Reject", func(t *testing.T) {
 		channel := NewSSHChannel("session")
-		
+
 		err := channel.Reject(ssh.UnknownChannelType, "test rejection")
 		assert.NoError(t, err)
 		assert.True(t, channel.IsRejected())
@@ -77,7 +77,7 @@ func TestChannelConn(t *testing.T) {
 	t.Run("Write", func(t *testing.T) {
 		conn := NewChannelConn()
 		data := []byte("test data")
-		
+
 		n, err := conn.Write(data)
 		assert.NoError(t, err)
 		assert.Equal(t, len(data), n)
@@ -86,7 +86,7 @@ func TestChannelConn(t *testing.T) {
 
 	t.Run("Read", func(t *testing.T) {
 		conn := NewChannelConn().WithReadData([]byte("test data"))
-		
+
 		buf := make([]byte, 5)
 		n, err := conn.Read(buf)
 		assert.NoError(t, err)
@@ -96,11 +96,11 @@ func TestChannelConn(t *testing.T) {
 
 	t.Run("Close", func(t *testing.T) {
 		conn := NewChannelConn()
-		
+
 		err := conn.Close()
 		assert.NoError(t, err)
 		assert.True(t, conn.IsClosed())
-		
+
 		// Writing to closed connection should fail
 		_, err = conn.Write([]byte("test"))
 		assert.Error(t, err)
@@ -108,7 +108,7 @@ func TestChannelConn(t *testing.T) {
 
 	t.Run("SendRequest", func(t *testing.T) {
 		conn := NewChannelConn()
-		
+
 		ok, err := conn.SendRequest("test", true, []byte("payload"))
 		assert.NoError(t, err)
 		assert.True(t, ok)
@@ -121,16 +121,16 @@ func TestHelperFunctions(t *testing.T) {
 			NewSSHChannel("session"),
 			NewSSHChannel("direct-tcpip"),
 		}
-		
+
 		ch := MakeNewChannelSlice(channels)
-		
+
 		// Read from channel
 		newChan1 := <-ch
 		assert.Equal(t, "session", newChan1.ChannelType())
-		
+
 		newChan2 := <-ch
 		assert.Equal(t, "direct-tcpip", newChan2.ChannelType())
-		
+
 		// Channel should be closed
 		_, ok := <-ch
 		assert.False(t, ok)
@@ -141,18 +141,18 @@ func TestHelperFunctions(t *testing.T) {
 			{Type: "shell", WantReply: true},
 			{Type: "exec", WantReply: false},
 		}
-		
+
 		ch := MakeRequestSlice(requests)
-		
+
 		// Read from channel
 		req1 := <-ch
 		assert.Equal(t, "shell", req1.Type)
 		assert.True(t, req1.WantReply)
-		
+
 		req2 := <-ch
 		assert.Equal(t, "exec", req2.Type)
 		assert.False(t, req2.WantReply)
-		
+
 		// Channel should be closed
 		_, ok := <-ch
 		assert.False(t, ok)

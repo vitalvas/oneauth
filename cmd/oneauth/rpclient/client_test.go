@@ -2,6 +2,8 @@ package rpclient
 
 import (
 	"net"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,19 +11,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsClient(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Run("ValidSocket", func(t *testing.T) {
-		validSocketPath := filepath.Join(t.TempDir(), "valid.sock") // must be not longer than 107 characters
+		validSocketPath := filepath.Join(t.TempDir(), "valid.sock")
 		listener, err := net.Listen("unix", validSocketPath)
 		if err != nil {
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			return
 		}
 		defer os.Remove(validSocketPath)
 		defer listener.Close()
 
-		if !IsClient(validSocketPath) {
-			t.Errorf("Expected IsClient to return true for a valid socket")
+		// Start a simple RPC server
+		go func() {
+			for {
+				conn, err := listener.Accept()
+				if err != nil {
+					return
+				}
+				rpc.ServeCodec(jsonrpc.NewServerCodec(conn))
+			}
+		}()
+
+		client, err := New(validSocketPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		if client != nil {
+			client.Close()
 		}
 	})
 
@@ -29,22 +45,61 @@ func TestIsClient(t *testing.T) {
 		invalidSocketPath := filepath.Join(t.TempDir(), "invalid.sock")
 		file, err := os.Create(invalidSocketPath)
 		if err != nil {
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			return
 		}
 		defer os.Remove(invalidSocketPath)
 		defer file.Close()
 
-		if IsClient(invalidSocketPath) {
-			t.Errorf("Expected IsClient to return false for an invalid socket")
-		}
+		client, err := New(invalidSocketPath)
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	})
 
 	t.Run("NonExistentSocket", func(t *testing.T) {
 		nonExistentSocketPath := filepath.Join(t.TempDir(), "non_existent_socket.sock")
 
-		if IsClient(nonExistentSocketPath) {
-			t.Errorf("Expected IsClient to return false for a non-existent socket")
+		client, err := New(nonExistentSocketPath)
+		assert.Error(t, err)
+		assert.Nil(t, client)
+	})
+}
+
+func TestIsClient(t *testing.T) {
+	t.Run("ValidSocket", func(t *testing.T) {
+		validSocketPath := filepath.Join(t.TempDir(), "valid.sock")
+		listener, err := net.Listen("unix", validSocketPath)
+		if err != nil {
+			assert.NoError(t, err)
+			return
 		}
+		defer os.Remove(validSocketPath)
+		defer listener.Close()
+
+		assert.True(t, IsClient(validSocketPath))
+	})
+
+	t.Run("InvalidSocket", func(t *testing.T) {
+		invalidSocketPath := filepath.Join(t.TempDir(), "invalid.sock")
+		file, err := os.Create(invalidSocketPath)
+		if err != nil {
+			assert.NoError(t, err)
+			return
+		}
+		defer os.Remove(invalidSocketPath)
+		defer file.Close()
+
+		assert.False(t, IsClient(invalidSocketPath))
+	})
+
+	t.Run("NonExistentSocket", func(t *testing.T) {
+		nonExistentSocketPath := filepath.Join(t.TempDir(), "non_existent_socket.sock")
+		assert.False(t, IsClient(nonExistentSocketPath))
+	})
+
+	t.Run("CloseClient", func(t *testing.T) {
+		client := &Client{}
+		err := client.Close()
+		assert.NoError(t, err)
 	})
 }

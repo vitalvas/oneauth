@@ -71,3 +71,4 @@ func loadYamlFile(filePath string, v *Config) error {
 
 	return decoder.Decode(v)
 }
+

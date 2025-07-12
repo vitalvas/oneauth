@@ -1,38 +1,36 @@
 package rpclient
 
 import (
-	"context"
 	"net"
-	"net/http"
-	"net/url"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 	"os"
 )
 
 type Client struct {
-	client     *http.Client
 	socketPath string
-	baseURL    *url.URL
+	client     *rpc.Client
 }
 
-func New(socketPath string) *Client {
-	transport := &http.Transport{
-		DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-			return net.Dial("unix", socketPath)
-		},
+func New(socketPath string) (*Client, error) {
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return nil, err
 	}
 
-	client := &http.Client{
-		Transport: transport,
-	}
+	client := rpc.NewClientWithCodec(jsonrpc.NewClientCodec(conn))
 
 	return &Client{
-		client:     client,
 		socketPath: socketPath,
-		baseURL: &url.URL{
-			Scheme: "http",
-			Host:   "localhost",
-		},
+		client:     client,
+	}, nil
+}
+
+func (c *Client) Close() error {
+	if c.client != nil {
+		return c.client.Close()
 	}
+	return nil
 }
 
 func IsClient(socketPath string) bool {

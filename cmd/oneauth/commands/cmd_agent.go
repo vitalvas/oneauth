@@ -24,14 +24,7 @@ var agentCmd = &cli.Command{
 	Usage:       "SSH Agent",
 	Description: "All configuration options can be set in the config file",
 	Before: func(_ *cli.Context) error {
-		version := buildinfo.Version
-
-		commit := buildinfo.Commit
-		if len(commit) > 8 {
-			version += "-" + commit[:8]
-		}
-
-		log.Printf("OneAuth version: %s", version)
+		log.Printf("OneAuth version: %s", buildinfo.FormattedVersion())
 
 		return nil
 	},
@@ -45,14 +38,26 @@ var agentCmd = &cli.Command{
 
 		log := logger.New(config.AgentLogPath)
 
-		if config.Keyring.Yubikey.Serial == 0 {
-			return fmt.Errorf("yubikey serial is required")
-		}
-
 		var agent *sshagent.SSHAgent
 
 		switch config.Socket.Type {
 		case "unix":
+			// Determine YubiKey serial to use
+			var yubikeySerial uint32
+			if config.Keyring.DisableYubikey {
+				log.Println("YubiKey keyring disabled - running without hardware authentication")
+				yubikeySerial = 0 // Disabled mode
+
+			} else {
+				// YubiKey serial is required for unix socket type when not disabled
+				if config.Keyring.Yubikey.Serial == 0 {
+					return fmt.Errorf("yubikey serial is required for unix socket type (or set disable_yubikey: true)")
+				}
+				yubikeySerial = config.Keyring.Yubikey.Serial
+				log.WithField("yubikey", yubikeySerial).Println("opening yubikey:", yubikeySerial)
+			}
+
+			// Set up socket
 			if _, err := os.Stat(config.Socket.Path); err == nil {
 				os.Remove(config.Socket.Path)
 			}
@@ -61,9 +66,8 @@ var agentCmd = &cli.Command{
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 
-			log.WithField("yubikey", config.Keyring.Yubikey.Serial).Println("opening yubikey:", config.Keyring.Yubikey.Serial)
-
-			agent, err = sshagent.New(config.Keyring.Yubikey.Serial, log, config)
+			// Create agent
+			agent, err = sshagent.New(yubikeySerial, log, config)
 			if err != nil {
 				return fmt.Errorf("failed to create agent: %w", err)
 			}
@@ -73,7 +77,8 @@ var agentCmd = &cli.Command{
 			})
 
 		case "dummy":
-			log.Println("skipping socket creation")
+			log.Println("skipping socket creation - running in dummy mode")
+			// For dummy mode, we don't need YubiKey, so agent remains nil
 
 		default:
 			return fmt.Errorf("socket type %s is not supported", config.Socket.Type)
