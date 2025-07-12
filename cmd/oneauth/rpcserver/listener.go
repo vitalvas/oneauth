@@ -35,7 +35,9 @@ func (s *RPCServer) ListenAndServe(_ context.Context, socketPath string) error {
 		fmt.Fprintf(w, "hello world from oneauth agent")
 	})
 
-	server := &http.Server{
+	mux.HandleFunc("/info", s.rpcInfo)
+
+	s.server = &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 2 * time.Second,
 	}
