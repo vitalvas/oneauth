@@ -27,6 +27,10 @@ func (a *SSHAgent) List() ([]*agent.Key, error) {
 
 	keys := make([]*agent.Key, 0, len(yubikey.AllSSHSlots)+a.softKeys.Len())
 
+	if a.yk == nil {
+		return nil, fmt.Errorf("no yubikey available")
+	}
+
 	activeSlots, err := a.yk.GetActiveSlots(yubikey.AllSSHSlots...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active slots: %w", err)
@@ -70,6 +74,10 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 	}
 
 	fp := tools.SSHFingerprint(reqKey)
+
+	if a.yk == nil {
+		return nil, fmt.Errorf("no yubikey available")
+	}
 
 	keys, err := a.yk.ListKeys(yubikey.AllSlots...)
 	if err != nil {

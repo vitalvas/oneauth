@@ -3,3 +3,4 @@ docs/site/
 _tmp/
 .cache
 *.json
+*.out

@@ -22,7 +22,6 @@ class Make:
                 'name': 'oneauth',
                 'dir': 'cmd/oneauth',
                 'build': [
-                    'darwin/amd64',
                     'darwin/arm64',
                     'linux/amd64'
                 ]

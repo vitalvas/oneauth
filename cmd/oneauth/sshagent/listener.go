@@ -19,20 +19,46 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 
 	a.log.Println("listening ssh-agent on", socketPath)
 
-	var err error
-	a.agentListener, err = net.Listen("unix", socketPath)
-	if err != nil {
-		return fmt.Errorf("failed to listen: %w", err)
+	// If no listener is set (normal case), create one
+	if a.getListener() == nil {
+		// Remove any existing file at the socket path
+		if _, err := os.Stat(socketPath); err == nil {
+			os.Remove(socketPath)
+		}
+
+		var err error
+		listener, err := net.Listen("unix", socketPath)
+		if err != nil {
+			return fmt.Errorf("failed to listen: %w", err)
+		}
+
+		a.setListener(listener)
+
+		if err := os.Chmod(socketPath, 0600); err != nil {
+			return fmt.Errorf("failed to chmod: %w", err)
+		}
+
+		defer func() {
+			if l := a.getListener(); l != nil {
+				l.Close()
+			}
+		}()
 	}
 
-	if err := os.Chmod(socketPath, 0600); err != nil {
-		return fmt.Errorf("failed to chmod: %w", err)
-	}
-
-	defer a.agentListener.Close()
+	// Start a goroutine to close the listener when context is cancelled
+	go func() {
+		<-ctx.Done()
+		if l := a.getListener(); l != nil {
+			l.Close()
+		}
+	}()
 
 	for {
-		conn, err := a.agentListener.Accept()
+		listener := a.getListener()
+		if listener == nil {
+			return fmt.Errorf("listener is nil")
+		}
+		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
@@ -47,8 +73,13 @@ func (a *SSHAgent) ListenAndServe(ctx context.Context, socketPath string) error 
 
 			if err, ok := err.(Temporary); ok && err.Temporary() {
 				a.log.Printf("temporary accept error: %v", err)
-				time.Sleep(time.Second)
-				continue
+				// Use context-aware sleep instead of blocking sleep
+				select {
+				case <-ctx.Done():
+					return nil
+				case <-time.After(100 * time.Millisecond):
+					continue
+				}
 			}
 
 			return fmt.Errorf("failed to accept: %w", err)
