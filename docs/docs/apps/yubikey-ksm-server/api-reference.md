@@ -5,7 +5,7 @@
 Each YubiKey has:
 
 - **Key ID**: 12 modhex characters (e.g., `cccccccccccc`)
-- **AES Key**: 16-byte secret key (base64 encoded)
+- **AES Key**: 16-byte secret key (hex or base64 encoded)
 
 Any YubiKey OTP contains the Key ID as the first 12 characters:
 
@@ -28,10 +28,35 @@ Use `yubico-piv-tool -a status` to get key ID from YubiKey device.
 ### AES Key
 
 - **Length**: 16 bytes
-- **Format**: Base64 encoded
-- **Example**: `MTIzNDU2Nzg5MDEyMzQ1Ng==`
+- **Formats**: Hex or Base64 encoded
+- **Hex Format**: 32 hexadecimal characters (0-9, a-f, A-F)
+  - **Example**: `31323334353637383930313233343536`
+- **Base64 Format**: Standard or URL-safe base64 encoding
+  - **Example**: `MTIzNDU2Nzg5MDEyMzQ1Ng==` (standard)
+  - **Example**: `MTIzNDU2Nzg5MDEyMzQ1Ng` (URL-safe)
 
-Use `xxd` and `base64` commands to convert hex AES keys to base64 format.
+The API automatically detects the format based on the input:
+
+- 32 hex characters: treated as hex format
+- Other formats: treated as base64 encoding
+
+Use `xxd` and `base64` commands to convert between formats if needed.
+
+#### Format Conversion Examples
+
+Convert hex to base64:
+
+```bash
+echo "31323334353637383930313233343536" | xxd -r -p | base64
+# Output: MTIzNDU2Nzg5MDEyMzQ1Ng==
+```
+
+Convert base64 to hex:
+
+```bash
+echo "MTIzNDU2Nzg5MDEyMzQ1Ng==" | base64 -d | xxd -p -c 16
+# Output: 31323334353637383930313233343536
+```
 
 Key ID must be exactly 12 modhex characters (`cbdefghijklnrtuv`)
 
@@ -56,6 +81,8 @@ Response:
 
 ### Add Key
 
+#### Using Base64 Format
+
 ```bash
 curl -X POST http://localhost:8002/api/v1/keys \
   -H "Content-Type: application/json" \
@@ -65,6 +92,20 @@ curl -X POST http://localhost:8002/api/v1/keys \
     "description": "John Doe YubiKey"
   }'
 ```
+
+#### Using Hex Format
+
+```bash
+curl -X POST http://localhost:8002/api/v1/keys \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key_id": "dddddddddddd",
+    "aes_key": "31323334353637383930313233343536",
+    "description": "Jane Doe YubiKey"
+  }'
+```
+
+Both examples use the same 16-byte AES key (`1234567890123456`) in different formats.
 
 ### List Keys
 
@@ -138,8 +179,17 @@ Error Response:
 curl "http://localhost:8002/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv"
 ```
 
-Success: `OK counter=001a low=8b0f high=0f use=03`
-Error: `ERR Key not found`
+Success response:
+
+```text
+OK counter=001a low=8b0f high=0f use=03
+```
+
+Error response:
+
+```text
+ERR Key not found
+```
 
 ## Error Codes
 
@@ -148,6 +198,14 @@ Error: `ERR Key not found`
 | `INVALID_OTP` | OTP format is invalid |
 | `KEY_NOT_FOUND` | YubiKey not registered |
 | `DECRYPTION_FAILED` | OTP decryption failed |
+| `INVALID_JSON` | Request body contains invalid JSON |
+| `MISSING_KEY_ID` | Key ID field is required |
+| `MISSING_AES_KEY` | AES key field is required |
+| `INVALID_KEY_ID_LENGTH` | Key ID must be exactly 12 characters |
+| `INVALID_KEY_ID_FORMAT` | Key ID contains invalid modhex characters |
+| `INVALID_AES_KEY_FORMAT` | AES key format is invalid (not hex or base64) |
+| `INVALID_AES_KEY_LENGTH` | AES key must be exactly 16 bytes |
+| `STORAGE_ERROR` | Failed to store key in database |
 
 ## Status Codes
 

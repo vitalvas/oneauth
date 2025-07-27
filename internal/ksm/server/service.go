@@ -2,12 +2,61 @@ package server
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vitalvas/oneauth/internal/ksm/database"
 	"github.com/vitalvas/oneauth/internal/yubico"
 )
+
+func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
+	// Remove any whitespace
+	aesKeyStr = strings.TrimSpace(aesKeyStr)
+	
+	// Check if it's hex format (32 hex characters for 16 bytes)
+	if len(aesKeyStr) == 32 {
+		// Validate all characters are hex
+		isValidHex := true
+		for _, c := range aesKeyStr {
+			if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+				isValidHex = false
+				break
+			}
+		}
+		
+		if isValidHex {
+			// Try to decode as hex
+			aesKey, err := hex.DecodeString(aesKeyStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid hex encoding: %w", err)
+			}
+			if len(aesKey) != 16 {
+				return nil, fmt.Errorf("AES key must be exactly 16 bytes")
+			}
+			return aesKey, nil
+		}
+		// 32 characters but not valid hex
+		return nil, fmt.Errorf("invalid hex or base64 encoding: contains invalid hex characters")
+	}
+	
+	// Try to decode as base64
+	aesKey, err := base64.RawURLEncoding.DecodeString(aesKeyStr)
+	if err != nil {
+		// Try standard base64 encoding as fallback
+		aesKey, err = base64.StdEncoding.DecodeString(aesKeyStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid hex or base64 encoding: %w", err)
+		}
+	}
+	
+	if len(aesKey) != 16 {
+		return nil, fmt.Errorf("AES key must be exactly 16 bytes")
+	}
+	
+	return aesKey, nil
+}
 
 func (s *Server) ValidateOTPFormat(otp string) error {
 	_, err := yubico.ValidateOTP(otp)
@@ -107,22 +156,18 @@ func (s *Server) DecryptOTP(otp string) (*DecryptResponse, error) {
 	}, nil
 }
 
-func (s *Server) StoreKey(keyID, aesKeyB64, description string) error {
+func (s *Server) StoreKey(keyID, aesKeyStr, description string) error {
 	// Validate key ID format using yubico package
 	if err := yubico.ValidateKeyIDFormat(keyID); err != nil {
 		return fmt.Errorf("invalid key ID format: %w", err)
 	}
 
-	// Decode AES key from base64
-	aesKey, err := base64.RawURLEncoding.DecodeString(aesKeyB64)
+	// Parse AES key from hex or base64 format
+	aesKey, err := s.parseAESKey(aesKeyStr)
 	if err != nil {
-		return fmt.Errorf("invalid base64 encoding: %w", err)
+		return err
 	}
 	defer clear(aesKey)
-
-	if len(aesKey) != 16 {
-		return fmt.Errorf("AES key must be exactly 16 bytes")
-	}
 
 	// Encrypt AES key using row-level encryption
 	encryptedKey, err := s.crypto.EncryptAESKey(keyID, aesKey)

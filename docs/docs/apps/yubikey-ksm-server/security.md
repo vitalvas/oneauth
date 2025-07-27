@@ -13,7 +13,7 @@ YubiKey AES keys are encrypted before storage using AES-256-GCM encryption.
 
 ### Storage Format
 
-```
+```text
 Database: key_id="cccccccccccc", encrypted_key="base64(nonce+ciphertext)"
 ```
 
@@ -27,11 +27,38 @@ Database: key_id="cccccccccccc", encrypted_key="base64(nonce+ciphertext)"
 ### Master Key
 
 Generate with:
+
 ```bash
 openssl rand -base64 48
 ```
 
 Master key compromise requires re-encryption of all stored keys.
+
+## Encryption Flow
+
+```mermaid
+flowchart TD
+    A[API Request: AES Key] --> B{Input Format}
+    B -->|32 hex chars| C[Parse as Hex]
+    B -->|Other format| D[Parse as Base64]
+    C --> E[16-byte AES Key]
+    D --> E
+    E --> F[Master Key SHA-256]
+    F --> G[HKDF: Derive Row Key]
+    G --> H[Generate Random Nonce]
+    H --> I[AES-256-GCM Encrypt]
+    I --> J[Base64 Encode]
+    J --> K[Store in Database]
+    
+    L[OTP Validation] --> M[Extract YubiKey ID]
+    M --> N[Query Database]
+    N --> O[Base64 Decode]
+    O --> P[Split Nonce/Ciphertext]
+    P --> Q[HKDF: Derive Same Row Key]
+    Q --> R[AES-256-GCM Decrypt]
+    R --> S[16-byte AES Key]
+    S --> T[Decrypt YubiKey OTP]
+```
 
 ## Standards Compliance
 

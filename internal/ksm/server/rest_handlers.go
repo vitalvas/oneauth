@@ -92,6 +92,8 @@ func (s *Server) handleStoreKey(w http.ResponseWriter, r *http.Request) {
 			s.sendJSONError(w, http.StatusBadRequest, "INVALID_KEY_ID_FORMAT", err.Error())
 		case strings.Contains(err.Error(), "AES key must be exactly 16 bytes"):
 			s.sendJSONError(w, http.StatusBadRequest, "INVALID_AES_KEY_LENGTH", err.Error())
+		case strings.Contains(err.Error(), "invalid hex or base64 encoding"):
+			s.sendJSONError(w, http.StatusBadRequest, "INVALID_AES_KEY_FORMAT", err.Error())
 		case strings.Contains(err.Error(), "invalid base64 encoding"):
 			s.sendJSONError(w, http.StatusBadRequest, "INVALID_BASE64", err.Error())
 		default:
