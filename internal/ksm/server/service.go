@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/vitalvas/oneauth/internal/ksm/database"
-	"github.com/vitalvas/oneauth/internal/yubico"
+	"github.com/vitalvas/oneauth/internal/ykshared"
 )
 
 func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
@@ -59,7 +59,7 @@ func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
 }
 
 func (s *Server) ValidateOTPFormat(otp string) error {
-	_, err := yubico.ValidateOTP(otp)
+	_, err := ykshared.ValidateOTP(otp)
 	if err != nil {
 		return fmt.Errorf("invalid OTP: %w", err)
 	}
@@ -77,7 +77,7 @@ func (s *Server) DecryptOTP(otp string) (*DecryptResponse, error) {
 	}
 
 	// Extract and validate key ID
-	keyID, err := yubico.ExtractKeyID(otp)
+	keyID, err := ykshared.ExtractKeyID(otp)
 	if err != nil {
 		return &DecryptResponse{
 			Status:    "ERROR",
@@ -157,8 +157,8 @@ func (s *Server) DecryptOTP(otp string) (*DecryptResponse, error) {
 }
 
 func (s *Server) StoreKey(keyID, aesKeyStr, description string) error {
-	// Validate key ID format using yubico package
-	if err := yubico.ValidateKeyIDFormat(keyID); err != nil {
+	// Validate key ID format using ykshared package
+	if err := ykshared.ValidateKeyIDFormat(keyID); err != nil {
 		return fmt.Errorf("invalid key ID format: %w", err)
 	}
 

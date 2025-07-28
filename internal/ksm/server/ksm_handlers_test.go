@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vitalvas/oneauth/internal/yubico"
 )
 
 func TestHandleKSMDecrypt_MissingOTP(t *testing.T) {
@@ -69,50 +68,6 @@ func TestHandleKSMDecrypt_WithStoredKey(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 	// Should get some response (may be decrypt error due to invalid OTP structure, but not key not found)
 	assert.NotContains(t, rr.Body.String(), "YubiKey not registered")
-}
-
-func TestExtractKeyIDFromOTP(t *testing.T) {
-	tests := []struct {
-		name       string
-		otp        string
-		expectedID string
-		expectErr  bool
-	}{
-		{
-			name:       "valid OTP with cccccccccccc key ID",
-			otp:        "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
-			expectedID: "cccccccccccc",
-			expectErr:  false,
-		},
-		{
-			name:       "valid OTP with different key ID",
-			otp:        "dddddddddddduvghubeukgkejrliudllkvjjktuvurln",
-			expectedID: "dddddddddddd",
-			expectErr:  false,
-		},
-		{
-			name:      "invalid OTP too short",
-			otp:       "short",
-			expectErr: true,
-		},
-		{
-			name:      "empty OTP",
-			otp:       "",
-			expectErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			keyID, err := yubico.ExtractKeyID(tt.otp)
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedID, keyID)
-			}
-		})
-	}
 }
 
 func TestKSMResponseFormat(t *testing.T) {
