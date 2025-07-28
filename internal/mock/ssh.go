@@ -123,7 +123,7 @@ func (m *ChannelConn) Read(b []byte) (n int, err error) {
 	if m.readPos >= len(m.readData) {
 		return 0, io.EOF
 	}
-	
+
 	n = copy(b, m.readData[m.readPos:])
 	m.readPos += n
 	return n, nil

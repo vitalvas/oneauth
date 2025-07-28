@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/vitalvas/oneauth/internal/tools"
+	"github.com/vitalvas/oneauth/internal/ykshared"
 )
 
 const (
@@ -86,7 +87,7 @@ func NewYubiAuth(clientID int, clientSecret string) (*YubiAuth, error) {
 }
 
 func (y *YubiAuth) Verify(otp string) (*VerifyResponse, error) {
-	serial, err := ValidateOTP(otp)
+	serial, err := ykshared.ValidateOTP(otp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate otp: %w", err)
 	}
