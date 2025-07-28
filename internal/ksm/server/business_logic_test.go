@@ -120,7 +120,7 @@ func TestStoreKey(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				
+
 				// Verify the key was actually stored correctly
 				storedKey, err := mockDB.GetKey(tt.keyID)
 				assert.NoError(t, err)
@@ -184,13 +184,13 @@ func TestListKeys(t *testing.T) {
 	keys, err := server.ListKeys()
 	assert.NoError(t, err)
 	assert.Len(t, keys, 2)
-	
+
 	// Verify key details (order might vary, so check by ID)
 	keyMap := make(map[string]*database.YubikeyKey)
 	for _, key := range keys {
 		keyMap[key.KeyID] = key
 	}
-	
+
 	assert.Contains(t, keyMap, "cccccccccccc")
 	assert.Equal(t, "Test key 1", keyMap["cccccccccccc"].Description)
 	assert.Contains(t, keyMap, "dddddddddddd")

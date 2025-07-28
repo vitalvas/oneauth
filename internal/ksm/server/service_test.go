@@ -58,7 +58,7 @@ func TestParseAESKey(t *testing.T) {
 			expected: nil,
 			hasError: true,
 		},
-		
+
 		// Base64 format tests
 		{
 			name:     "Base64/Valid URL encoding",
@@ -90,7 +90,7 @@ func TestParseAESKey(t *testing.T) {
 			expected: nil,
 			hasError: true,
 		},
-		
+
 		// Edge cases
 		{
 			name:     "EdgeCase/Empty string",
@@ -121,7 +121,7 @@ func TestParseAESKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := server.parseAESKey(tt.input)
-			
+
 			if tt.hasError {
 				assert.Error(t, err)
 				assert.Nil(t, result)

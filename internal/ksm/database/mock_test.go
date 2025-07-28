@@ -29,13 +29,13 @@ func TestMockDB(t *testing.T) {
 
 		// Test storing a key
 		key := &YubikeyKey{
-			KeyID:            "cccccccccccc",
-			AESKeyEncrypted:  "encrypted-key-data",
-			Description:      "Test key",
-			CreatedAt:        time.Now(),
-			UpdatedAt:        time.Now(),
-			UsageCount:       0,
-			Active:           true,
+			KeyID:           "cccccccccccc",
+			AESKeyEncrypted: "encrypted-key-data",
+			Description:     "Test key",
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+			UsageCount:      0,
+			Active:          true,
 		}
 
 		err = mockDB.StoreKey(key)

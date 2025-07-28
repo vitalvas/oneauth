@@ -14,7 +14,7 @@ import (
 func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
 	// Remove any whitespace
 	aesKeyStr = strings.TrimSpace(aesKeyStr)
-	
+
 	// Check if it's hex format (32 hex characters for 16 bytes)
 	if len(aesKeyStr) == 32 {
 		// Validate all characters are hex
@@ -25,7 +25,7 @@ func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
 				break
 			}
 		}
-		
+
 		if isValidHex {
 			// Try to decode as hex
 			aesKey, err := hex.DecodeString(aesKeyStr)
@@ -40,7 +40,7 @@ func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
 		// 32 characters but not valid hex
 		return nil, fmt.Errorf("invalid hex or base64 encoding: contains invalid hex characters")
 	}
-	
+
 	// Try to decode as base64
 	aesKey, err := base64.RawURLEncoding.DecodeString(aesKeyStr)
 	if err != nil {
@@ -50,11 +50,11 @@ func (s *Server) parseAESKey(aesKeyStr string) ([]byte, error) {
 			return nil, fmt.Errorf("invalid hex or base64 encoding: %w", err)
 		}
 	}
-	
+
 	if len(aesKey) != 16 {
 		return nil, fmt.Errorf("AES key must be exactly 16 bytes")
 	}
-	
+
 	return aesKey, nil
 }
 
