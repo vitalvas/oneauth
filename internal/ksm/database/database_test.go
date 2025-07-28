@@ -10,80 +10,86 @@ import (
 	"github.com/vitalvas/oneauth/internal/ksm/config"
 )
 
-func TestNew_SQLite(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type: "sqlite",
-		SQLite: &config.SQLiteConfig{
-			Path:        ":memory:",
-			JournalMode: "WAL",
-			Synchronous: "NORMAL",
-		},
-	}
+func TestNew(t *testing.T) {
+	t.Run("SQLite", func(t *testing.T) {
+		t.Run("valid config", func(t *testing.T) {
+			cfg := &config.DatabaseConfig{
+				Type: "sqlite",
+				SQLite: &config.SQLiteConfig{
+					Path:        ":memory:",
+					JournalMode: "WAL",
+					Synchronous: "NORMAL",
+				},
+			}
 
-	db, err := New(cfg)
-	assert.NoError(t, err)
-	assert.NotNil(t, db)
-	defer db.Close()
+			db, err := New(cfg)
+			assert.NoError(t, err)
+			assert.NotNil(t, db)
+			defer db.Close()
 
-	// Test health check
-	err = db.HealthCheck()
-	assert.NoError(t, err)
-}
+			// Test health check
+			err = db.HealthCheck()
+			assert.NoError(t, err)
+		})
 
-func TestNew_PostgreSQL(t *testing.T) {
-	// Test PostgreSQL path in New() function with connection failure
-	cfg := &config.DatabaseConfig{
-		Type: "postgres",
-		PostgreSQL: &config.PostgreSQLConfig{
-			Host:              "localhost",
-			Port:              5432,
-			Username:          "test",
-			Password:          "test",
-			Database:          "test",
-			MaxConnections:    10,
-			ConnectionTimeout: 30 * time.Second,
-		},
-	}
+		t.Run("missing config", func(t *testing.T) {
+			cfg := &config.DatabaseConfig{
+				Type:   "sqlite",
+				SQLite: nil, // Missing config
+			}
 
-	// This should attempt to connect and fail
-	db, err := New(cfg)
-	assert.Error(t, err)
-	assert.Nil(t, db)
-}
+			db, err := New(cfg)
+			assert.Error(t, err)
+			assert.Nil(t, db)
+			assert.Contains(t, err.Error(), "SQLite configuration is required")
+		})
+	})
 
-func TestNew_PostgreSQL_MissingConfig(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type:       "postgres",
-		PostgreSQL: nil, // Missing config
-	}
+	t.Run("PostgreSQL", func(t *testing.T) {
+		t.Run("connection failure", func(t *testing.T) {
+			// Test PostgreSQL path in New() function with connection failure
+			cfg := &config.DatabaseConfig{
+				Type: "postgres",
+				PostgreSQL: &config.PostgreSQLConfig{
+					Host:              "localhost",
+					Port:              5432,
+					Username:          "test",
+					Password:          "test",
+					Database:          "test",
+					MaxConnections:    10,
+					ConnectionTimeout: 30 * time.Second,
+				},
+			}
 
-	db, err := New(cfg)
-	assert.Error(t, err)
-	assert.Nil(t, db)
-	assert.Contains(t, err.Error(), "PostgreSQL configuration is required")
-}
+			// This should attempt to connect and fail
+			db, err := New(cfg)
+			assert.Error(t, err)
+			assert.Nil(t, db)
+		})
 
-func TestNew_SQLite_MissingConfig(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type:   "sqlite",
-		SQLite: nil, // Missing config
-	}
+		t.Run("missing config", func(t *testing.T) {
+			cfg := &config.DatabaseConfig{
+				Type:       "postgres",
+				PostgreSQL: nil, // Missing config
+			}
 
-	db, err := New(cfg)
-	assert.Error(t, err)
-	assert.Nil(t, db)
-	assert.Contains(t, err.Error(), "SQLite configuration is required")
-}
+			db, err := New(cfg)
+			assert.Error(t, err)
+			assert.Nil(t, db)
+			assert.Contains(t, err.Error(), "PostgreSQL configuration is required")
+		})
+	})
 
-func TestNew_InvalidType(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type: "invalid",
-	}
+	t.Run("invalid type", func(t *testing.T) {
+		cfg := &config.DatabaseConfig{
+			Type: "invalid",
+		}
 
-	db, err := New(cfg)
-	assert.Error(t, err)
-	assert.Nil(t, db)
-	assert.Contains(t, err.Error(), "unsupported database type")
+		db, err := New(cfg)
+		assert.Error(t, err)
+		assert.Nil(t, db)
+		assert.Contains(t, err.Error(), "unsupported database type")
+	})
 }
 
 func TestSQLiteOperations(t *testing.T) {
@@ -100,11 +106,13 @@ func TestSQLiteOperations(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	// Test key operations
-	testKeyOperations(t, db)
+	t.Run("key operations", func(t *testing.T) {
+		testKeyOperations(t, db)
+	})
 
-	// Test counter operations
-	testCounterOperations(t, db)
+	t.Run("counter operations", func(t *testing.T) {
+		testCounterOperations(t, db)
+	})
 }
 
 func testKeyOperations(t *testing.T, db DB) {
@@ -215,8 +223,7 @@ func testCounterOperations(t *testing.T, db DB) {
 	assert.NoError(t, err) // Should not error due to ON CONFLICT handling
 }
 
-func TestScanYubikeyKey(t *testing.T) {
-	// Create a mock row with test data
+func TestDatabaseOperations(t *testing.T) {
 	cfg := &config.DatabaseConfig{
 		Type: "sqlite",
 		SQLite: &config.SQLiteConfig{
@@ -226,59 +233,52 @@ func TestScanYubikeyKey(t *testing.T) {
 		},
 	}
 
-	db, err := New(cfg)
-	assert.NoError(t, err)
-	defer db.Close()
+	t.Run("scan yubikey key", func(t *testing.T) {
+		db, err := New(cfg)
+		assert.NoError(t, err)
+		defer db.Close()
 
-	// Store a key first
-	now := time.Now()
-	originalKey := &YubikeyKey{
-		KeyID:           "testkey12345",
-		AESKeyEncrypted: "encrypted-data",
-		Description:     "Test Description",
-		CreatedAt:       now,
-		UpdatedAt:       now,
-		UsageCount:      0, // StoreKey always starts with 0
-		Active:          true,
-	}
+		// Store a key first
+		now := time.Now()
+		originalKey := &YubikeyKey{
+			KeyID:           "testkey12345",
+			AESKeyEncrypted: "encrypted-data",
+			Description:     "Test Description",
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			UsageCount:      0, // StoreKey always starts with 0
+			Active:          true,
+		}
 
-	err = db.StoreKey(originalKey)
-	assert.NoError(t, err)
+		err = db.StoreKey(originalKey)
+		assert.NoError(t, err)
 
-	// Retrieve and verify scanning worked correctly
-	retrieved, err := db.GetKey("testkey12345")
-	assert.NoError(t, err)
-	assert.Equal(t, originalKey.KeyID, retrieved.KeyID)
-	assert.Equal(t, originalKey.AESKeyEncrypted, retrieved.AESKeyEncrypted)
-	assert.Equal(t, originalKey.Description, retrieved.Description)
-	assert.Equal(t, 0, retrieved.UsageCount) // Should be 0 when first stored
-	assert.Equal(t, originalKey.Active, retrieved.Active)
-	assert.NotNil(t, retrieved.CreatedAt)
-	assert.NotNil(t, retrieved.UpdatedAt)
-}
+		// Retrieve and verify scanning worked correctly
+		retrieved, err := db.GetKey("testkey12345")
+		assert.NoError(t, err)
+		assert.Equal(t, originalKey.KeyID, retrieved.KeyID)
+		assert.Equal(t, originalKey.AESKeyEncrypted, retrieved.AESKeyEncrypted)
+		assert.Equal(t, originalKey.Description, retrieved.Description)
+		assert.Equal(t, 0, retrieved.UsageCount) // Should be 0 when first stored
+		assert.Equal(t, originalKey.Active, retrieved.Active)
+		assert.NotNil(t, retrieved.CreatedAt)
+		assert.NotNil(t, retrieved.UpdatedAt)
+	})
 
-func TestHealthCheck(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type: "sqlite",
-		SQLite: &config.SQLiteConfig{
-			Path:        ":memory:",
-			JournalMode: "WAL",
-			Synchronous: "NORMAL",
-		},
-	}
+	t.Run("health check", func(t *testing.T) {
+		db, err := New(cfg)
+		assert.NoError(t, err)
+		defer db.Close()
 
-	db, err := New(cfg)
-	assert.NoError(t, err)
-	defer db.Close()
+		// Test health check on working database
+		err = db.HealthCheck()
+		assert.NoError(t, err)
 
-	// Test health check on working database
-	err = db.HealthCheck()
-	assert.NoError(t, err)
-
-	// Close database and test health check failure
-	db.Close()
-	err = db.HealthCheck()
-	assert.Error(t, err)
+		// Close database and test health check failure
+		db.Close()
+		err = db.HealthCheck()
+		assert.Error(t, err)
+	})
 }
 
 func TestMultipleKeyOperations(t *testing.T) {
@@ -326,86 +326,97 @@ func TestMultipleKeyOperations(t *testing.T) {
 		},
 	}
 
-	for _, key := range keys {
-		err := db.StoreKey(key)
+	t.Run("store multiple keys", func(t *testing.T) {
+		for _, key := range keys {
+			err := db.StoreKey(key)
+			assert.NoError(t, err)
+		}
+	})
+
+	t.Run("list all keys", func(t *testing.T) {
+		allKeys, err := db.ListKeys()
 		assert.NoError(t, err)
-	}
+		assert.Len(t, allKeys, 3)
 
-	// List all keys
-	allKeys, err := db.ListKeys()
-	assert.NoError(t, err)
-	assert.Len(t, allKeys, 3)
+		// Verify keys are ordered by creation time (newest first)
+		assert.Equal(t, "key000000003", allKeys[0].KeyID) // Last created should be first
+	})
 
-	// Verify keys are ordered by creation time (newest first)
-	assert.Equal(t, "key000000003", allKeys[0].KeyID) // Last created should be first
+	t.Run("delete key and verify remaining", func(t *testing.T) {
+		// Delete one key
+		err = db.DeleteKey("key000000002")
+		assert.NoError(t, err)
 
-	// Delete one key
-	err = db.DeleteKey("key000000002")
-	assert.NoError(t, err)
+		// List should now have 2 keys
+		remainingKeys, err := db.ListKeys()
+		assert.NoError(t, err)
+		assert.Len(t, remainingKeys, 2)
 
-	// List should now have 2 keys
-	remainingKeys, err := db.ListKeys()
-	assert.NoError(t, err)
-	assert.Len(t, remainingKeys, 2)
-
-	// Verify correct keys remain
-	keyIDs := make([]string, len(remainingKeys))
-	for i, key := range remainingKeys {
-		keyIDs[i] = key.KeyID
-	}
-	assert.Contains(t, keyIDs, "key000000001")
-	assert.Contains(t, keyIDs, "key000000003")
-	assert.NotContains(t, keyIDs, "key000000002")
+		// Verify correct keys remain
+		keyIDs := make([]string, len(remainingKeys))
+		for i, key := range remainingKeys {
+			keyIDs[i] = key.KeyID
+		}
+		assert.Contains(t, keyIDs, "key000000001")
+		assert.Contains(t, keyIDs, "key000000003")
+		assert.NotContains(t, keyIDs, "key000000002")
+	})
 }
 
-func TestSQLiteSpecificFeatures(t *testing.T) {
-	cfg := &config.DatabaseConfig{
-		Type: "sqlite",
-		SQLite: &config.SQLiteConfig{
-			Path:        ":memory:",
-			JournalMode: "WAL",
-			Synchronous: "NORMAL",
-		},
-	}
+func TestDatabaseSpecificFeatures(t *testing.T) {
+	t.Run("SQLite", func(t *testing.T) {
+		t.Run("directory creation", func(t *testing.T) {
+			cfg := &config.DatabaseConfig{
+				Type: "sqlite",
+				SQLite: &config.SQLiteConfig{
+					Path:        ":memory:",
+					JournalMode: "WAL",
+					Synchronous: "NORMAL",
+				},
+			}
 
-	// Test SQLite creation with directory creation
-	tmpDir := "/tmp/ksm-test"
-	cfg.SQLite.Path = tmpDir + "/test.db"
+			// Test SQLite creation with directory creation
+			tmpDir := "/tmp/ksm-test"
+			cfg.SQLite.Path = tmpDir + "/test.db"
 
-	db, err := New(cfg)
-	assert.NoError(t, err)
-	defer db.Close()
+			db, err := New(cfg)
+			assert.NoError(t, err)
+			defer db.Close()
 
-	// Test that database works
-	err = db.HealthCheck()
-	assert.NoError(t, err)
-}
+			// Test that database works
+			err = db.HealthCheck()
+			assert.NoError(t, err)
+		})
+	})
 
-func TestPostgreSQLSpecificFeatures(t *testing.T) {
-	// Test PostgreSQL configuration validation
-	cfg := &config.DatabaseConfig{
-		Type: "postgresql",
-		PostgreSQL: &config.PostgreSQLConfig{
-			Host:              "nonexistent-host",
-			Port:              5432,
-			Username:          "test",
-			Password:          "test",
-			Database:          "test",
-			MaxConnections:    10,
-			ConnectionTimeout: 30 * time.Second,
-		},
-	}
+	t.Run("PostgreSQL", func(t *testing.T) {
+		t.Run("connection to nonexistent host", func(t *testing.T) {
+			// Test PostgreSQL configuration validation
+			cfg := &config.DatabaseConfig{
+				Type: "postgresql",
+				PostgreSQL: &config.PostgreSQLConfig{
+					Host:              "nonexistent-host",
+					Port:              5432,
+					Username:          "test",
+					Password:          "test",
+					Database:          "test",
+					MaxConnections:    10,
+					ConnectionTimeout: 30 * time.Second,
+				},
+			}
 
-	// This should fail to connect
-	db, err := New(cfg)
-	if err != nil {
-		// Expected - can't connect to nonexistent host
-		assert.Error(t, err)
-		assert.Nil(t, db)
-	} else {
-		// If somehow it connects, clean up
-		db.Close()
-	}
+			// This should fail to connect
+			db, err := New(cfg)
+			if err != nil {
+				// Expected - can't connect to nonexistent host
+				assert.Error(t, err)
+				assert.Nil(t, db)
+			} else {
+				// If somehow it connects, clean up
+				db.Close()
+			}
+		})
+	})
 }
 
 func TestDatabaseErrorCases(t *testing.T) {
@@ -422,31 +433,37 @@ func TestDatabaseErrorCases(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	// Test operations with non-existent key ID
-	err = db.UpdateKeyUsage("nonexistent")
-	assert.NoError(t, err) // Should not error even if key doesn't exist
+	t.Run("nonexistent key operations", func(t *testing.T) {
+		// Test operations with non-existent key ID
+		err = db.UpdateKeyUsage("nonexistent")
+		assert.NoError(t, err) // Should not error even if key doesn't exist
 
-	err = db.DeleteKey("nonexistent")
-	assert.NoError(t, err) // Should not error even if key doesn't exist
+		err = db.DeleteKey("nonexistent")
+		assert.NoError(t, err) // Should not error even if key doesn't exist
+	})
 
-	// Test counter validation with non-existent key
-	err = db.ValidateCounter("nonexistent", 1, 1)
-	assert.NoError(t, err) // Should pass since no counters exist
+	t.Run("counter validation with nonexistent key", func(t *testing.T) {
+		// Test counter validation with non-existent key
+		err = db.ValidateCounter("nonexistent", 1, 1)
+		assert.NoError(t, err) // Should pass since no counters exist
+	})
 
-	// Test storing counter for non-existent key (should fail due to foreign key)
-	counter := &YubikeyCounter{
-		KeyID:         "nonexistent",
-		Counter:       1,
-		SessionUse:    1,
-		TimestampHigh: 100,
-		TimestampLow:  200,
-		CreatedAt:     time.Now(),
-	}
+	t.Run("store counter for nonexistent key", func(t *testing.T) {
+		// Test storing counter for non-existent key (should fail due to foreign key)
+		counter := &YubikeyCounter{
+			KeyID:         "nonexistent",
+			Counter:       1,
+			SessionUse:    1,
+			TimestampHigh: 100,
+			TimestampLow:  200,
+			CreatedAt:     time.Now(),
+		}
 
-	// This might fail or succeed depending on foreign key constraints
-	// Just ensure it doesn't panic
-	assert.NotPanics(t, func() {
-		_ = db.StoreCounter(counter)
+		// This might fail or succeed depending on foreign key constraints
+		// Just ensure it doesn't panic
+		assert.NotPanics(t, func() {
+			_ = db.StoreCounter(counter)
+		})
 	})
 }
 
@@ -495,19 +512,21 @@ func TestScanYubikeyKeyEdgeCases(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := db.StoreKey(tt.key)
-			assert.NoError(t, err)
+	t.Run("edge case keys", func(t *testing.T) {
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := db.StoreKey(tt.key)
+				assert.NoError(t, err)
 
-			retrieved, err := db.GetKey(tt.key.KeyID)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.key.KeyID, retrieved.KeyID)
-			assert.Equal(t, tt.key.AESKeyEncrypted, retrieved.AESKeyEncrypted)
-			assert.Equal(t, tt.key.Description, retrieved.Description)
-			assert.Equal(t, tt.key.Active, retrieved.Active)
-		})
-	}
+				retrieved, err := db.GetKey(tt.key.KeyID)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.key.KeyID, retrieved.KeyID)
+				assert.Equal(t, tt.key.AESKeyEncrypted, retrieved.AESKeyEncrypted)
+				assert.Equal(t, tt.key.Description, retrieved.Description)
+				assert.Equal(t, tt.key.Active, retrieved.Active)
+			})
+		}
+	})
 }
 
 func TestCounterEdgeCases(t *testing.T) {
@@ -557,19 +576,21 @@ func TestCounterEdgeCases(t *testing.T) {
 		},
 	}
 
-	for i, counter := range counters {
-		t.Run(fmt.Sprintf("counter_%d", i), func(t *testing.T) {
-			err := db.StoreCounter(counter)
-			assert.NoError(t, err)
+	t.Run("counter edge cases", func(t *testing.T) {
+		for i, counter := range counters {
+			t.Run(fmt.Sprintf("counter_%d", i), func(t *testing.T) {
+				err := db.StoreCounter(counter)
+				assert.NoError(t, err)
 
-			// Validate that higher counters pass
-			err = db.ValidateCounter(counter.KeyID, counter.Counter+1, counter.SessionUse)
-			assert.NoError(t, err)
+				// Validate that higher counters pass
+				err = db.ValidateCounter(counter.KeyID, counter.Counter+1, counter.SessionUse)
+				assert.NoError(t, err)
 
-			err = db.ValidateCounter(counter.KeyID, counter.Counter, counter.SessionUse+1)
-			assert.NoError(t, err)
-		})
-	}
+				err = db.ValidateCounter(counter.KeyID, counter.Counter, counter.SessionUse+1)
+				assert.NoError(t, err)
+			})
+		}
+	})
 }
 
 func TestCounterValidationEdgeCases(t *testing.T) {
@@ -644,37 +665,39 @@ func TestCounterValidationEdgeCases(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// First validate before storing (should pass initially)
-			err = db.ValidateCounter("edgetest0001", tc.counter, tc.sessionUse)
-			if tc.expectValidate {
-				assert.NoError(t, err, "Validation should pass before storing")
-			}
-
-			// Store the counter
-			counterRecord := &YubikeyCounter{
-				KeyID:         "edgetest0001",
-				Counter:       tc.counter,
-				SessionUse:    tc.sessionUse,
-				TimestampHigh: 12345,
-				TimestampLow:  67890,
-				CreatedAt:     time.Now(),
-			}
-
-			err = db.StoreCounter(counterRecord)
-			if tc.expectStore {
-				assert.NoError(t, err, "Counter storage should succeed")
-
-				// Now validate again (should fail due to replay detection)
+	t.Run("validation edge cases", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				// First validate before storing (should pass initially)
 				err = db.ValidateCounter("edgetest0001", tc.counter, tc.sessionUse)
-				assert.Error(t, err, "Validation should fail after storing (replay detection)")
-				assert.Contains(t, err.Error(), "replay attack detected")
-			} else {
-				assert.Error(t, err, "Counter storage should fail")
-			}
-		})
-	}
+				if tc.expectValidate {
+					assert.NoError(t, err, "Validation should pass before storing")
+				}
+
+				// Store the counter
+				counterRecord := &YubikeyCounter{
+					KeyID:         "edgetest0001",
+					Counter:       tc.counter,
+					SessionUse:    tc.sessionUse,
+					TimestampHigh: 12345,
+					TimestampLow:  67890,
+					CreatedAt:     time.Now(),
+				}
+
+				err = db.StoreCounter(counterRecord)
+				if tc.expectStore {
+					assert.NoError(t, err, "Counter storage should succeed")
+
+					// Now validate again (should fail due to replay detection)
+					err = db.ValidateCounter("edgetest0001", tc.counter, tc.sessionUse)
+					assert.Error(t, err, "Validation should fail after storing (replay detection)")
+					assert.Contains(t, err.Error(), "replay attack detected")
+				} else {
+					assert.Error(t, err, "Counter storage should fail")
+				}
+			})
+		}
+	})
 }
 
 func TestCounterSequenceValidation(t *testing.T) {
@@ -716,22 +739,24 @@ func TestCounterSequenceValidation(t *testing.T) {
 		{102, 1},
 	}
 
-	// Store all counters in sequence
-	for i, s := range sequence {
-		t.Run(fmt.Sprintf("Store_sequence_%d", i), func(t *testing.T) {
-			counterRecord := &YubikeyCounter{
-				KeyID:         "seqtest00001",
-				Counter:       s.counter,
-				SessionUse:    s.sessionUse,
-				TimestampHigh: 10000 + i,
-				TimestampLow:  20000 + i,
-				CreatedAt:     time.Now(),
-			}
+	t.Run("store sequence", func(t *testing.T) {
+		// Store all counters in sequence
+		for i, s := range sequence {
+			t.Run(fmt.Sprintf("Store_sequence_%d", i), func(t *testing.T) {
+				counterRecord := &YubikeyCounter{
+					KeyID:         "seqtest00001",
+					Counter:       s.counter,
+					SessionUse:    s.sessionUse,
+					TimestampHigh: 10000 + i,
+					TimestampLow:  20000 + i,
+					CreatedAt:     time.Now(),
+				}
 
-			err = db.StoreCounter(counterRecord)
-			assert.NoError(t, err)
-		})
-	}
+				err = db.StoreCounter(counterRecord)
+				assert.NoError(t, err)
+			})
+		}
+	})
 
 	// Test validation against various scenarios
 	validationTests := []struct {
@@ -785,17 +810,19 @@ func TestCounterSequenceValidation(t *testing.T) {
 		},
 	}
 
-	for _, vt := range validationTests {
-		t.Run(vt.name, func(t *testing.T) {
-			err = db.ValidateCounter("seqtest00001", vt.counter, vt.sessionUse)
-			if vt.shouldPass {
-				assert.NoError(t, err, "Expected validation to pass: %s", vt.reason)
-			} else {
-				assert.Error(t, err, "Expected validation to fail: %s", vt.reason)
-				if err != nil {
-					assert.Contains(t, err.Error(), "replay attack detected")
+	t.Run("validate scenarios", func(t *testing.T) {
+		for _, vt := range validationTests {
+			t.Run(vt.name, func(t *testing.T) {
+				err = db.ValidateCounter("seqtest00001", vt.counter, vt.sessionUse)
+				if vt.shouldPass {
+					assert.NoError(t, err, "Expected validation to pass: %s", vt.reason)
+				} else {
+					assert.Error(t, err, "Expected validation to fail: %s", vt.reason)
+					if err != nil {
+						assert.Contains(t, err.Error(), "replay attack detected")
+					}
 				}
-			}
-		})
-	}
+			})
+		}
+	})
 }

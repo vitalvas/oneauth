@@ -44,7 +44,7 @@ func setupTestServer(t *testing.T) *Server {
 	}
 }
 
-func createTestServer(mockDB *database.MockDB, cryptoEngine *crypto.Engine) *Server {
+func createTestServer(mockDB database.DB, cryptoEngine *crypto.Engine) *Server {
 	cfg := &config.Config{}
 	log := logger.New("")
 

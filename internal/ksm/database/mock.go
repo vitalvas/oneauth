@@ -1,58 +1,84 @@
 package database
 
 import (
-	"github.com/stretchr/testify/mock"
+	"fmt"
+
+	"github.com/vitalvas/oneauth/internal/ksm/config"
 )
 
-// MockDB implements DB interface for testing
+// MockDB implements DB interface using in-memory SQLite for testing
+// This provides more realistic testing than mocked functions while maintaining isolation
 type MockDB struct {
-	mock.Mock
+	*SQLite
 }
 
-func (m *MockDB) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockDB) StoreKey(key *YubikeyKey) error {
-	args := m.Called(key)
-	return args.Error(0)
-}
-
-func (m *MockDB) GetKey(keyID string) (*YubikeyKey, error) {
-	args := m.Called(keyID)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
+// NewMockDB creates a new MockDB instance with in-memory SQLite
+func NewMockDB() (*MockDB, error) {
+	cfg := &config.DatabaseConfig{
+		Type: "sqlite",
+		SQLite: &config.SQLiteConfig{
+			Path:        ":memory:",
+			JournalMode: "WAL",
+			Synchronous: "NORMAL",
+		},
 	}
-	return args.Get(0).(*YubikeyKey), args.Error(1)
+
+	db, err := New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	sqliteDB, ok := db.(*SQLite)
+	if !ok {
+		return nil, fmt.Errorf("expected SQLite database, got %T", db)
+	}
+
+	return &MockDB{SQLite: sqliteDB}, nil
 }
 
-func (m *MockDB) ListKeys() ([]*YubikeyKey, error) {
-	args := m.Called()
-	return args.Get(0).([]*YubikeyKey), args.Error(1)
+// Reset clears all data from the MockDB (for test isolation)
+func (m *MockDB) Reset() error {
+	// Drop and recreate tables to clear all data
+	_, err := m.db.Exec(`
+		DROP TABLE IF EXISTS yubikey_counters;
+		DROP TABLE IF EXISTS yubikey_keys;
+	`)
+	if err != nil {
+		return err
+	}
+
+	// Recreate the schema
+	return m.createTables()
 }
 
-func (m *MockDB) DeleteKey(keyID string) error {
-	args := m.Called(keyID)
-	return args.Error(0)
+// SetHealthCheckError allows tests to simulate database health check failures
+// This is the only mocking behavior we preserve for specific test scenarios
+type MockDBWithErrors struct {
+	*MockDB
+	healthCheckError error
 }
 
-func (m *MockDB) UpdateKeyUsage(keyID string) error {
-	args := m.Called(keyID)
-	return args.Error(0)
+// NewMockDBWithErrors creates a MockDB that can simulate specific error conditions
+func NewMockDBWithErrors() (*MockDBWithErrors, error) {
+	mockDB, err := NewMockDB()
+	if err != nil {
+		return nil, err
+	}
+
+	return &MockDBWithErrors{
+		MockDB: mockDB,
+	}, nil
 }
 
-func (m *MockDB) ValidateCounter(keyID string, counter, sessionUse int) error {
-	args := m.Called(keyID, counter, sessionUse)
-	return args.Error(0)
+// SetHealthCheckError configures the database to return an error on health checks
+func (m *MockDBWithErrors) SetHealthCheckError(err error) {
+	m.healthCheckError = err
 }
 
-func (m *MockDB) StoreCounter(counter *YubikeyCounter) error {
-	args := m.Called(counter)
-	return args.Error(0)
-}
-
-func (m *MockDB) HealthCheck() error {
-	args := m.Called()
-	return args.Error(0)
+// HealthCheck returns the configured error if set, otherwise performs real health check
+func (m *MockDBWithErrors) HealthCheck() error {
+	if m.healthCheckError != nil {
+		return m.healthCheckError
+	}
+	return m.MockDB.HealthCheck()
 }

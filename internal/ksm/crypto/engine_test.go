@@ -241,57 +241,59 @@ func TestEngine_MasterKeyHashing(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestEngine_LongMasterKey(t *testing.T) {
-	// Test with very long master key
-	longKey := string(make([]byte, 1000)) // 1000 null bytes
-	for i := range longKey {
-		longKey = longKey[:i] + "a" + longKey[i+1:]
-	}
+func TestMasterKeyVariations(t *testing.T) {
+	t.Run("long master key", func(t *testing.T) {
+		// Test with very long master key
+		longKey := string(make([]byte, 1000)) // 1000 null bytes
+		for i := range longKey {
+			longKey = longKey[:i] + "a" + longKey[i+1:]
+		}
 
-	engine, err := NewEngine(longKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, engine)
-	assert.Equal(t, 32, len(engine.masterKey)) // Should be hashed to 32 bytes
-}
+		engine, err := NewEngine(longKey)
+		assert.NoError(t, err)
+		assert.NotNil(t, engine)
+		assert.Equal(t, 32, len(engine.masterKey)) // Should be hashed to 32 bytes
+	})
 
-func TestEngine_SpecialCharactersMasterKey(t *testing.T) {
-	// Test with special characters in master key
-	specialKey := "!@#$%^&*()_+{}|:<>?[]\\;'\",./"
+	t.Run("special characters master key", func(t *testing.T) {
+		// Test with special characters in master key
+		specialKey := "!@#$%^&*()_+{}|:<>?[]\\;'\",./"
 
-	engine, err := NewEngine(specialKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, engine)
+		engine, err := NewEngine(specialKey)
+		assert.NoError(t, err)
+		assert.NotNil(t, engine)
 
-	// Should work normally
-	keyID := "cccccccccccc"
-	aesKey := []byte("1234567890123456")
+		// Should work normally
+		keyID := "cccccccccccc"
+		aesKey := []byte("1234567890123456")
 
-	encrypted, err := engine.EncryptAESKey(keyID, aesKey)
-	assert.NoError(t, err)
+		encrypted, err := engine.EncryptAESKey(keyID, aesKey)
+		assert.NoError(t, err)
 
-	decrypted, err := engine.DecryptAESKey(keyID, encrypted)
-	assert.NoError(t, err)
-	assert.Equal(t, aesKey, decrypted)
-}
+		decrypted, err := engine.DecryptAESKey(keyID, encrypted)
+		assert.NoError(t, err)
+		assert.Equal(t, aesKey, decrypted)
+	})
 
-func TestEngine_UnicadeMasterKey(t *testing.T) {
-	// Test with Unicode characters in master key
-	unicodeKey := "测试密钥🔐🗝️"
+	t.Run("unicode master key", func(t *testing.T) {
+		// Test with Unicode characters in master key
+		unicodeKey := "测试密钥🔐🗝️"
 
-	engine, err := NewEngine(unicodeKey)
-	assert.NoError(t, err)
-	assert.NotNil(t, engine)
+		engine, err := NewEngine(unicodeKey)
+		assert.NoError(t, err)
+		assert.NotNil(t, engine)
 
-	// Should work normally
-	keyID := "cccccccccccc"
-	aesKey := []byte("1234567890123456")
+		// Should work normally
+		keyID := "cccccccccccc"
+		aesKey := []byte("1234567890123456")
 
-	encrypted, err := engine.EncryptAESKey(keyID, aesKey)
-	assert.NoError(t, err)
+		encrypted, err := engine.EncryptAESKey(keyID, aesKey)
+		assert.NoError(t, err)
 
-	decrypted, err := engine.DecryptAESKey(keyID, encrypted)
-	assert.NoError(t, err)
-	assert.Equal(t, aesKey, decrypted)
+		decrypted, err := engine.DecryptAESKey(keyID, encrypted)
+		assert.NoError(t, err)
+		assert.Equal(t, aesKey, decrypted)
+	})
 }
 
 func TestEncryptAESKey_EmptyKeyID(t *testing.T) {
