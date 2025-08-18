@@ -447,3 +447,85 @@ func TestLoadYamlFile_EdgeCases(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+// setupTestHomeDir creates a temporary home directory for testing
+func setupTestHomeDir(t *testing.T) (string, func()) {
+	tmpHome, err := os.MkdirTemp("", "test-home-*")
+	require.NoError(t, err)
+
+	// Create .oneauth directory in temp home
+	oneauthDir := filepath.Join(tmpHome, ".oneauth")
+	err = os.MkdirAll(oneauthDir, 0755)
+	require.NoError(t, err)
+
+	// Temporarily set HOME env var
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpHome)
+
+	cleanup := func() {
+		os.Setenv("HOME", originalHome)
+		os.RemoveAll(tmpHome)
+	}
+
+	return tmpHome, cleanup
+}
+
+func TestControlSocketPathGeneration(t *testing.T) {
+	t.Run("AutoGeneration", func(t *testing.T) {
+		_, cleanup := setupTestHomeDir(t)
+		defer cleanup()
+
+		// Create config with custom socket path but no control_socket_path
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+socket:
+  type: "unix"
+  path: "/tmp/custom-agent.sock"
+keyring:
+  disable_yubikey: true
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		// Should use default control socket path when not explicitly set
+		assert.Contains(t, config.ControlSocketPath, "oneauth-ctrl.sock")
+		assert.Equal(t, "/tmp/custom-agent.sock", config.Socket.Path)
+	})
+
+	t.Run("ExplicitControlSocketPath", func(t *testing.T) {
+		_, cleanup := setupTestHomeDir(t)
+		defer cleanup()
+
+		// Create config with both socket path and explicit control_socket_path
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+control_socket_path: "/tmp/explicit-control.sock"
+socket:
+  type: "unix"
+  path: "/tmp/custom-agent.sock"
+keyring:
+  disable_yubikey: true
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		// Should use explicit control socket path
+		assert.Equal(t, "/tmp/explicit-control.sock", config.ControlSocketPath)
+		assert.Equal(t, "/tmp/custom-agent.sock", config.Socket.Path)
+	})
+}
+

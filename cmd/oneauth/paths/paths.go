@@ -13,7 +13,7 @@ func AgentSocket() (string, error) {
 }
 
 func ControlSocket() (string, error) {
-	return tools.InHomeDir(oneauthDir, "control.sock")
+	return tools.InHomeDir(oneauthDir, "oneauth-ctrl.sock")
 }
 
 func Config() (string, error) {
@@ -26,4 +26,8 @@ func BinDir() (string, error) {
 
 func LogDir() (string, error) {
 	return tools.InHomeDir(oneauthDir, "log")
+}
+
+func RootDir() (string, error) {
+	return tools.InHomeDir(oneauthDir)
 }

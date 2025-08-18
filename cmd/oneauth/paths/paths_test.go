@@ -39,7 +39,7 @@ func TestControlSocket(t *testing.T) {
 	actual, err := ControlSocket()
 	assert.Nil(t, err, "Error getting control socket path: %v", err)
 
-	expected := filepath.Join(home, oneauthDir, "control.sock")
+	expected := filepath.Join(home, oneauthDir, "oneauth-ctrl.sock")
 	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }
 
@@ -101,4 +101,16 @@ func TestServiceFile(t *testing.T) {
 	if !strings.HasSuffix(path, correctDir) {
 		t.Errorf("Expected result to be in %s, got result: %s", correctDir, path)
 	}
+}
+
+func TestRootDir(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
+
+	actual, err := RootDir()
+	assert.Nil(t, err, "Error getting root directory: %v", err)
+
+	expected := filepath.Join(home, oneauthDir)
+
+	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }

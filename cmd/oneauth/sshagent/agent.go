@@ -33,9 +33,15 @@ type Actions struct {
 }
 
 func New(serial uint32, log *logrus.Logger, config *config.Config) (*SSHAgent, error) {
-	yk, err := yubikey.OpenBySerial(serial)
-	if err != nil {
-		return nil, err
+	var yk *yubikey.Yubikey
+	var err error
+	
+	// Only try to open YubiKey if serial is not 0 (disabled mode)
+	if serial != 0 {
+		yk, err = yubikey.OpenBySerial(serial)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	contextLogger := log.WithFields(logrus.Fields{
@@ -46,7 +52,7 @@ func New(serial uint32, log *logrus.Logger, config *config.Config) (*SSHAgent, e
 		actions: Actions{
 			BeforeSignHook: config.Keyring.BeforeSignHook,
 		},
-		yk:  yk,
+		yk:  yk, // Will be nil when YubiKey is disabled
 		log: contextLogger,
 
 		softKeys: keystore.New(config.Keyring.KeepKeySeconds),
