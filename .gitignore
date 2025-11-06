@@ -4,3 +4,5 @@ _tmp/
 .cache
 *.json
 *.out
+*.html
+*.log

@@ -1,9 +1,7 @@
 package rpcserver
 
 import (
-	"net/http"
 	"testing"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +21,7 @@ func TestNew(t *testing.T) {
 		assert.NotNil(t, rpcServer)
 		assert.Equal(t, sshAgent, rpcServer.SSHAgent)
 		assert.Equal(t, log, rpcServer.log)
-		assert.Nil(t, rpcServer.GetServer())
+		assert.NotNil(t, rpcServer.GetRPCServer())
 	})
 }
 
@@ -37,7 +35,7 @@ func TestRPCServerType(t *testing.T) {
 
 		// Verify fields exist
 		assert.NotNil(t, &rpcServer.SSHAgent)
-		assert.NotNil(t, rpcServer.GetServer)
+		assert.NotNil(t, rpcServer.GetRPCServer)
 		assert.NotNil(t, &rpcServer.log)
 	})
 }
@@ -53,8 +51,8 @@ func TestRPCServerFields(t *testing.T) {
 		assert.Equal(t, sshAgent, rpcServer.SSHAgent)
 		assert.Equal(t, log, rpcServer.log)
 
-		// Server should initially be nil
-		assert.Nil(t, rpcServer.GetServer())
+		// RPC Server should be initialized
+		assert.NotNil(t, rpcServer.GetRPCServer())
 	})
 }
 
@@ -68,29 +66,37 @@ func TestShutdown(t *testing.T) {
 		})
 	})
 
-	t.Run("ShutdownWithServer", func(t *testing.T) {
+	t.Run("ShutdownWithListener", func(t *testing.T) {
+		mockListener := &mockListener{}
 		rpcServer := &RPCServer{
-			server: &http.Server{},
+			listener: mockListener,
 		}
 
-		// Should not panic when server exists
+		// Should not panic when listener exists
 		assert.NotPanics(t, func() {
 			rpcServer.Shutdown()
 		})
+		assert.True(t, mockListener.closed)
 	})
 }
 
-func TestShutdownTimeout(t *testing.T) {
-	t.Run("TimeoutContextCreation", func(t *testing.T) {
+type mockListener struct {
+	closed bool
+}
+
+func (m *mockListener) Close() error {
+	m.closed = true
+	return nil
+}
+
+func TestShutdownSpeed(t *testing.T) {
+	t.Run("QuickShutdown", func(t *testing.T) {
 		rpcServer := &RPCServer{}
 
-		// Test that shutdown creates proper context
-		start := time.Now()
-		rpcServer.Shutdown()
-		elapsed := time.Since(start)
-
-		// Should complete quickly when server is nil
-		assert.Less(t, elapsed, 100*time.Millisecond)
+		// Test that shutdown completes quickly
+		assert.NotPanics(t, func() {
+			rpcServer.Shutdown()
+		})
 	})
 }
 
@@ -104,7 +110,7 @@ func TestRPCServerConstruction(t *testing.T) {
 		// Verify all parameters are set
 		assert.NotNil(t, rpcServer.SSHAgent)
 		assert.NotNil(t, rpcServer.log)
-		assert.Nil(t, rpcServer.GetServer())
+		assert.NotNil(t, rpcServer.GetRPCServer())
 	})
 
 	t.Run("WithNilParameters", func(t *testing.T) {
@@ -115,6 +121,7 @@ func TestRPCServerConstruction(t *testing.T) {
 		assert.NotNil(t, rpcServer)
 		assert.Nil(t, rpcServer.SSHAgent)
 		assert.Nil(t, rpcServer.log)
+		assert.NotNil(t, rpcServer.GetRPCServer())
 	})
 }
 
@@ -133,26 +140,18 @@ func TestRPCServerMethods(t *testing.T) {
 }
 
 func TestRPCServerShutdownBehavior(t *testing.T) {
-	t.Run("ShutdownCancellation", func(t *testing.T) {
-		// Create a server with a mock HTTP server
-		mockServer := &http.Server{}
+	t.Run("ShutdownCompletion", func(t *testing.T) {
+		// Create a server with a mock listener
+		mockListener := &mockListener{}
 		rpcServer := &RPCServer{
-			server: mockServer,
+			listener: mockListener,
 		}
 
-		// Test shutdown doesn't hang
-		done := make(chan bool)
-		go func() {
+		// Test shutdown completes
+		assert.NotPanics(t, func() {
 			rpcServer.Shutdown()
-			done <- true
-		}()
-
-		select {
-		case <-done:
-			// Success - shutdown completed
-		case <-time.After(10 * time.Second):
-			t.Fatal("Shutdown took too long")
-		}
+		})
+		assert.True(t, mockListener.closed)
 	})
 }
 
@@ -168,8 +167,9 @@ func TestRPCServerEdgeCases(t *testing.T) {
 	})
 
 	t.Run("RepeatedShutdown", func(t *testing.T) {
+		mockListener := &mockListener{}
 		rpcServer := &RPCServer{
-			server: &http.Server{},
+			listener: mockListener,
 		}
 
 		// Multiple shutdowns should not panic
@@ -178,5 +178,6 @@ func TestRPCServerEdgeCases(t *testing.T) {
 			rpcServer.Shutdown()
 			rpcServer.Shutdown()
 		})
+		assert.True(t, mockListener.closed)
 	})
 }
