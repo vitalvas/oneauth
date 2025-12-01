@@ -81,7 +81,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_REPO_ROLE }}
@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-region: us-east-1
           role-to-assume: ${{ secrets.AWS_REPO_ROLE }}
