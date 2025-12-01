@@ -10,11 +10,11 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
-	github.com/vitalvas/gokit v0.20.0
+	github.com/vitalvas/gokit v0.21.0
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/crypto v0.45.0
-	golang.org/x/mod v0.29.0
-	golang.org/x/sync v0.17.0
+	golang.org/x/mod v0.30.0
+	golang.org/x/sync v0.18.0
 	golang.org/x/sys v0.38.0
 	golang.org/x/term v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
