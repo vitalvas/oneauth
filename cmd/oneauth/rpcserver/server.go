@@ -1,8 +1,7 @@
 package rpcserver
 
 import (
-	"context"
-	"net/http"
+	"net/rpc"
 	"sync"
 	"time"
 
@@ -11,35 +10,40 @@ import (
 )
 
 type RPCServer struct {
-	SSHAgent *sshagent.SSHAgent
-	server   *http.Server
-	log      *logrus.Logger
-	mu       sync.RWMutex
+	SSHAgent  *sshagent.SSHAgent
+	rpcServer *rpc.Server
+	log       *logrus.Logger
+	mu        sync.RWMutex
+	listener  interface{ Close() error }
+	startTime time.Time
 }
 
 func New(sshAgent *sshagent.SSHAgent, log *logrus.Logger) *RPCServer {
-	return &RPCServer{
-		SSHAgent: sshAgent,
-		log:      log,
+	rpcServer := rpc.NewServer()
+	s := &RPCServer{
+		SSHAgent:  sshAgent,
+		rpcServer: rpcServer,
+		log:       log,
+		startTime: time.Now(),
 	}
+
+	rpcServer.Register(&AgentService{server: s})
+
+	return s
 }
 
 func (s *RPCServer) Shutdown() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	s.mu.RLock()
-	server := s.server
-	s.mu.RUnlock()
-
-	if server != nil {
-		server.Shutdown(ctx)
+	if s.listener != nil {
+		s.listener.Close()
+		s.listener = nil
 	}
 }
 
-// GetServer returns the HTTP server instance (for testing)
-func (s *RPCServer) GetServer() *http.Server {
+func (s *RPCServer) GetRPCServer() *rpc.Server {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.server
+	return s.rpcServer
 }

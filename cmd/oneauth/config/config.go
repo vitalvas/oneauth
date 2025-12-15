@@ -6,10 +6,20 @@ import (
 	"time"
 
 	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
 func Load(filePath string) (*Config, error) {
+	rootDir, err := paths.RootDir()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tools.MkDir(rootDir, 0700); err != nil {
+		return nil, err
+	}
+
 	agentSocketPath, err := paths.AgentSocket()
 	if err != nil {
 		return nil, err
@@ -61,3 +71,4 @@ func loadYamlFile(filePath string, v *Config) error {
 
 	return decoder.Decode(v)
 }
+
