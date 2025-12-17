@@ -46,10 +46,10 @@ jobs:
         os: ${{ fromJSON(needs.pre-build.outputs.build_os) }}
 
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
-          go-version: 1.22
+          go-version-file: 'go.mod'
 
       - name: Install deps for Linux
         if: matrix.os == 'ubuntu-24.04'
