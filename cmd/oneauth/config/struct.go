@@ -9,6 +9,15 @@ type Config struct {
 	AgentLogPath      string  `yaml:"agent_log_path,omitempty"`
 	Socket            Socket  `yaml:"socket,omitempty"`
 	Keyring           Keyring `yaml:"keyring,omitempty"`
+
+	// Agents defines additional soft-key-only SSH agents
+	Agents map[string]AgentConfig `yaml:"agents,omitempty"`
+}
+
+// AgentConfig defines configuration for an additional soft-key SSH agent
+type AgentConfig struct {
+	SocketPath     string `yaml:"socket_path"`
+	KeepKeySeconds int64  `yaml:"keep_key_seconds,omitempty"`
 }
 
 type Socket struct {
