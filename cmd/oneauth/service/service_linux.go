@@ -11,3 +11,7 @@ func Uninstal() error {
 func Restart() error {
 	return ErrNotImplemented
 }
+
+func SetSSHAuthSock(_ string) error {
+	return nil
+}
