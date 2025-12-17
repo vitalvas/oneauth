@@ -27,8 +27,24 @@ func skipIfNoPCSC(t *testing.T) {
 	}
 }
 
+// skipIfYubiKeyConnected skips the test if a YubiKey is connected
+// Used for tests that assume no YubiKey is present
+func skipIfYubiKeyConnected(t *testing.T) {
+	t.Helper()
+	cards, err := yubikey.Cards()
+	if err != nil {
+		// If we can't list cards, that's fine - no YubiKey detected
+		return
+	}
+	if len(cards) > 0 {
+		t.Skipf("Skipping test: YubiKey is connected (found %d card(s))", len(cards))
+	}
+}
+
 func TestSelectYubiKey(t *testing.T) {
 	t.Run("NoYubiKeys", func(t *testing.T) {
+		skipIfYubiKeyConnected(t)
+
 		// Create a mock context
 		app := &cli.App{
 			Flags: []cli.Flag{
@@ -109,6 +125,8 @@ func TestSelectYubiKey(t *testing.T) {
 
 func TestSelectYubiKeyContextHandling(t *testing.T) {
 	t.Run("ContextSetup", func(t *testing.T) {
+		skipIfYubiKeyConnected(t)
+
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
@@ -129,6 +147,8 @@ func TestSelectYubiKeyContextHandling(t *testing.T) {
 	})
 
 	t.Run("SerialFlagHandling", func(t *testing.T) {
+		skipIfYubiKeyConnected(t)
+
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
@@ -156,6 +176,8 @@ func TestSelectYubiKeyContextHandling(t *testing.T) {
 
 func TestSelectYubiKeyLogic(t *testing.T) {
 	t.Run("ZeroSerialHandling", func(t *testing.T) {
+		skipIfYubiKeyConnected(t)
+
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
@@ -246,6 +268,8 @@ func TestSelectYubiKeyEdgeCases(t *testing.T) {
 // Test helper function behavior
 func TestSelectYubiKeyFunctionBehavior(t *testing.T) {
 	t.Run("FunctionSignature", func(t *testing.T) {
+		skipIfYubiKeyConnected(t)
+
 		// Test that function accepts cli.Context and returns error
 		app := &cli.App{
 			Flags: []cli.Flag{
@@ -265,6 +289,8 @@ func TestSelectYubiKeyFunctionBehavior(t *testing.T) {
 	})
 
 	t.Run("ErrorsAreProperlyFormatted", func(t *testing.T) {
+		skipIfNoPCSC(t)
+
 		app := &cli.App{
 			Flags: []cli.Flag{
 				&cli.Uint64Flag{Name: "serial"},
