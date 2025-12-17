@@ -157,3 +157,11 @@ func writeServiceTemplate(exePath string, serviceFile *os.File) error {
 		template.New("service").Parse(serviceTmpl),
 	).Execute(serviceFile, serviceInfo)
 }
+
+func SetSSHAuthSock(socketPath string) error {
+	if _, err := callLaunchCtl("setenv", "SSH_AUTH_SOCK", socketPath); err != nil {
+		return fmt.Errorf("failed to set SSH_AUTH_SOCK: %w", err)
+	}
+
+	return nil
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/cmd/oneauth/rpcserver"
+	"github.com/vitalvas/oneauth/cmd/oneauth/service"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/logger"
@@ -66,6 +67,10 @@ var agentCmd = &cli.Command{
 			agent, err = sshagent.New(config.Keyring.Yubikey.Serial, log, config)
 			if err != nil {
 				return fmt.Errorf("failed to create agent: %w", err)
+			}
+
+			if err := service.SetSSHAuthSock(config.Socket.Path); err != nil {
+				log.Printf("failed to set SSH_AUTH_SOCK: %v", err)
 			}
 
 			group.Go(func() error {
