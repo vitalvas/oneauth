@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/vitalvas/oneauth/cmd/oneauth/paths"
+	"github.com/vitalvas/oneauth/internal/tools"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,6 +40,11 @@ func Load(filePath string) (*Config, error) {
 		return nil, err
 	}
 
+	// Expand ~ in agent socket paths
+	if err := expandAgentPaths(conf); err != nil {
+		return nil, err
+	}
+
 	agentID, err := LoadOrCreateAgentID()
 	if err != nil {
 		return nil, err
@@ -46,6 +53,30 @@ func Load(filePath string) (*Config, error) {
 	conf.AgentID = agentID
 
 	return conf, nil
+}
+
+func expandAgentPaths(conf *Config) error {
+	homeDir, err := tools.GetHomeDir()
+	if err != nil {
+		return err
+	}
+
+	for name, agent := range conf.Agents {
+		// Set default socket path if not specified
+		if agent.SocketPath == "" {
+			defaultPath, err := paths.NamedAgentSocket(name)
+			if err != nil {
+				return fmt.Errorf("failed to get default socket path for agent %s: %w", name, err)
+			}
+			agent.SocketPath = defaultPath
+		} else if strings.HasPrefix(agent.SocketPath, "~/") {
+			// Expand ~ in socket paths
+			agent.SocketPath = homeDir + agent.SocketPath[1:]
+		}
+		conf.Agents[name] = agent
+	}
+
+	return nil
 }
 
 func loadYamlFile(filePath string, v *Config) error {
