@@ -78,7 +78,7 @@ jobs:
         run: go test -race -v ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
