@@ -4,7 +4,6 @@ go 1.25
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/go-piv/piv-go v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/sirupsen/logrus v1.9.3
