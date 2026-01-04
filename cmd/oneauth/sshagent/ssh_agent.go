@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/crypto/ssh"
