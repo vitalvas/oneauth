@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 	"golang.org/x/term"

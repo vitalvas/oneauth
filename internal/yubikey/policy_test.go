@@ -3,7 +3,7 @@ package yubikey
 import (
 	"testing"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 )
 
 func TestMapPINPolicy(t *testing.T) {
