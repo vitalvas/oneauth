@@ -3,7 +3,7 @@ package yubikey
 import (
 	"fmt"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 )
 
 var (
