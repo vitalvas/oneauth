@@ -148,7 +148,7 @@ func TestKSMProtocolCompatibility(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			url := "/wsapi/decrypt/"
 			if tt.queryParams != "" {
-				url += "?" + tt.queryParams
+				url = fmt.Sprintf("%s?%s", url, tt.queryParams)
 			}
 
 			req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -236,7 +236,7 @@ func TestKSMConcurrentRequests(t *testing.T) {
 
 	// Store test keys
 	for i := 0; i < 5; i++ {
-		keyID := "cccccccccc" + modhexChars[i]
+		keyID := fmt.Sprintf("cccccccccc%s", modhexChars[i])
 		err := server.StoreKey(keyID, "MTIzNDU2Nzg5MDEyMzQ1Ng", fmt.Sprintf("Test key %d", i))
 		assert.NoError(t, err)
 	}
@@ -245,10 +245,10 @@ func TestKSMConcurrentRequests(t *testing.T) {
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
 		go func(i int) {
-			keyID := "cccccccccc" + modhexChars[i%5]
-			otp := keyID + "jktuvurlnlnvghubeukgkejrliudllkvj"
+			keyID := fmt.Sprintf("cccccccccc%s", modhexChars[i%5])
+			otp := fmt.Sprintf("%sjktuvurlnlnvghubeukgkejrliudllkvj", keyID)
 
-			req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp="+otp, nil)
+			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/wsapi/decrypt/?otp=%s", otp), nil)
 			assert.NoError(t, err)
 
 			rr := httptest.NewRecorder()

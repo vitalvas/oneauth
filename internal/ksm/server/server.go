@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -100,5 +103,54 @@ func (s *Server) Close() error {
 			return fmt.Errorf("failed to close database: %w", err)
 		}
 	}
+	return nil
+}
+
+func Run(configPath string) error {
+	log := logger.New("")
+
+	srv, err := New(configPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := srv.Close(); closeErr != nil {
+			log.WithError(closeErr).Error("Failed to close server resources")
+		}
+	}()
+
+	serverErrChan := make(chan error, 1)
+
+	go func() {
+		defer close(serverErrChan)
+		if startErr := srv.Start(); startErr != nil {
+			serverErrChan <- fmt.Errorf("server error: %w", startErr)
+		}
+	}()
+
+	log.Info("KSM server started")
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case srvErr, ok := <-serverErrChan:
+		if !ok {
+			log.Info("Server shut down normally")
+			return nil
+		}
+		return srvErr
+	case <-sigChan:
+		log.Info("Shutting down server...")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if stopErr := srv.Stop(ctx); stopErr != nil {
+		return fmt.Errorf("failed to shutdown server: %w", stopErr)
+	}
+
+	log.Info("Server shutdown successfully")
 	return nil
 }

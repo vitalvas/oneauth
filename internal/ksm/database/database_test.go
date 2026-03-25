@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -377,7 +378,7 @@ func TestDatabaseSpecificFeatures(t *testing.T) {
 
 			// Test SQLite creation with directory creation
 			tmpDir := "/tmp/ksm-test"
-			cfg.SQLite.Path = tmpDir + "/test.db"
+			cfg.SQLite.Path = filepath.Join(tmpDir, "test.db")
 
 			db, err := New(cfg)
 			assert.NoError(t, err)
