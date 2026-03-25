@@ -382,6 +382,93 @@ func TestSoftAgentIntegration(t *testing.T) {
 	assert.Empty(t, keys)
 }
 
+func TestSoftAgentListenerNilListener(t *testing.T) {
+	agent := NewSoftAgent("test", 300, logrus.New())
+
+	// Create a mock listener that nils the agent's listener on Accept
+	nilListener := &nilAfterAcceptListener{onAccept: func() { agent.setListener(nil) }}
+	agent.setListener(nilListener)
+
+	err := agent.ListenAndServe(t.Context(), "mock")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "listener is nil")
+}
+
+func TestSoftAgentListenerNonTemporaryError(t *testing.T) {
+	agent := NewSoftAgent("test", 300, logrus.New())
+
+	mockListener := &permanentErrorListener{}
+	agent.setListener(mockListener)
+
+	err := agent.ListenAndServe(context.Background(), "mock")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to accept")
+}
+
+func TestSoftAgentShutdownWithActiveListener(t *testing.T) {
+	agent := NewSoftAgent("test", 300, logrus.New())
+
+	tmpDir, err := os.MkdirTemp("", "soft-agent-test")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	socketPath := filepath.Join(tmpDir, "test.sock")
+
+	// Create a real listener
+	listener, err := net.Listen("unix", socketPath)
+	require.NoError(t, err)
+	agent.setListener(listener)
+
+	// Add a key so Close() has work to do
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	agent.Add(sshagent.AddedKey{PrivateKey: key, Comment: "test"})
+
+	// Shutdown should close listener and clean up keys
+	err = agent.Shutdown()
+	assert.NoError(t, err)
+
+	// Verify keys were cleaned up
+	keys, err := agent.List()
+	require.NoError(t, err)
+	assert.Empty(t, keys)
+}
+
+func TestSoftAgentAddInvalidKey(t *testing.T) {
+	agent := NewSoftAgent("test", 300, logrus.New())
+	defer agent.Close()
+
+	// Add with nil private key should fail
+	err := agent.Add(sshagent.AddedKey{PrivateKey: nil})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "Add:")
+}
+
+func TestSoftAgentSignWithFlags(t *testing.T) {
+	agent := NewSoftAgent("test", 300, logrus.New())
+	defer agent.Close()
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	pubkey, err := ssh.NewPublicKey(&key.PublicKey)
+	require.NoError(t, err)
+
+	err = agent.Add(sshagent.AddedKey{PrivateKey: key, Comment: "test"})
+	require.NoError(t, err)
+
+	t.Run("SHA256Flag", func(t *testing.T) {
+		sig, err := agent.SignWithFlags(pubkey, []byte("test data"), sshagent.SignatureFlagRsaSha256)
+		require.NoError(t, err)
+		assert.NotNil(t, sig)
+	})
+
+	t.Run("SHA512Flag", func(t *testing.T) {
+		sig, err := agent.SignWithFlags(pubkey, []byte("test data"), sshagent.SignatureFlagRsaSha512)
+		require.NoError(t, err)
+		assert.NotNil(t, sig)
+	})
+}
+
 func TestSoftAgentMultipleKeys(t *testing.T) {
 	agent := NewSoftAgent("multi-key-test", 300, logrus.New())
 	defer agent.Close()

@@ -667,6 +667,40 @@ func TestExpandAgentPaths(t *testing.T) {
 		err := expandAgentPaths(conf)
 		require.NoError(t, err)
 	})
+
+	t.Run("ErrorOnInvalidHome", func(t *testing.T) {
+		originalHome := os.Getenv("HOME")
+		os.Unsetenv("HOME")
+		defer os.Setenv("HOME", originalHome)
+
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					SocketPath: "~/test.sock",
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		assert.Error(t, err)
+	})
+
+	t.Run("DefaultSocketPathErrorOnInvalidHome", func(t *testing.T) {
+		originalHome := os.Getenv("HOME")
+		os.Unsetenv("HOME")
+		defer os.Setenv("HOME", originalHome)
+
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					KeepKeySeconds: 3600,
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		assert.Error(t, err)
+	})
 }
 
 func TestAgentConfigStruct(t *testing.T) {
