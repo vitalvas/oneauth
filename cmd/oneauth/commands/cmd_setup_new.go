@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/internal/certgen"

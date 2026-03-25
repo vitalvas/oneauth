@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/go-piv/piv-go/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 )
 
 type Yubikey struct {
@@ -153,7 +153,7 @@ func (y *Yubikey) Reset(newPIN, newPUK string) error {
 	return nil
 }
 
-func (y *Yubikey) ResetMngmtKey(newKey [24]byte) error {
+func (y *Yubikey) ResetMngmtKey(newKey []byte) error {
 	if err := y.reOpen(); err != nil {
 		return err
 	}
@@ -203,18 +203,18 @@ func (y *Yubikey) ListKeys(slots ...Slot) ([]Cert, error) {
 	return out, nil
 }
 
-func (y *Yubikey) getManagementKey(pin string) ([24]byte, error) {
+func (y *Yubikey) getManagementKey(pin string) ([]byte, error) {
 	if err := y.yk.VerifyPIN(pin); err != nil {
-		return [24]byte{}, fmt.Errorf("failed to verify PIN: %w", err)
+		return nil, fmt.Errorf("failed to verify PIN: %w", err)
 	}
 
 	meta, err := y.yk.Metadata(pin)
 	if err != nil {
-		return [24]byte{}, err
+		return nil, err
 	}
 
 	if meta.ManagementKey == nil {
-		return [24]byte{}, errors.New("management key not set")
+		return nil, errors.New("management key not set")
 	}
 
 	return *meta.ManagementKey, nil

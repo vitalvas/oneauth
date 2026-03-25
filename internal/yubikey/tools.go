@@ -39,10 +39,10 @@ func GeneratePukCode() (string, error) {
 	return "", fmt.Errorf("could not generate a valid PUK code")
 }
 
-func GenerateManagementKey() ([24]byte, error) {
-	var newKey [24]byte
-	if _, err := rand.Read(newKey[:]); err != nil {
-		return newKey, err
+func GenerateManagementKey() ([]byte, error) {
+	newKey := make([]byte, 24)
+	if _, err := rand.Read(newKey); err != nil {
+		return nil, err
 	}
 
 	return newKey, nil

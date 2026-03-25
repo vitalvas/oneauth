@@ -12,6 +12,7 @@ import (
 	"github.com/vitalvas/gokit/xcmd"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
 	"github.com/vitalvas/oneauth/cmd/oneauth/rpcserver"
+	"github.com/vitalvas/oneauth/cmd/oneauth/service"
 	"github.com/vitalvas/oneauth/cmd/oneauth/sshagent"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 	"github.com/vitalvas/oneauth/internal/logger"
@@ -28,7 +29,7 @@ var agentCmd = &cli.Command{
 
 		commit := buildinfo.Commit
 		if len(commit) > 8 {
-			version += "-" + commit[:8]
+			version = fmt.Sprintf("%s-%s", version, commit[:8])
 		}
 
 		log.Printf("OneAuth version: %s", version)
@@ -51,6 +52,12 @@ var agentCmd = &cli.Command{
 
 		var agent *sshagent.SSHAgent
 
+		// Track all socket paths for permission fixing
+		socketPaths := []string{config.ControlSocketPath}
+
+		// Track all soft agents for shutdown
+		softAgents := make(map[string]*sshagent.SoftAgent)
+
 		switch config.Socket.Type {
 		case "unix":
 			if _, err := os.Stat(config.Socket.Path); err == nil {
@@ -68,6 +75,12 @@ var agentCmd = &cli.Command{
 				return fmt.Errorf("failed to create agent: %w", err)
 			}
 
+			if err := service.SetSSHAuthSock(config.Socket.Path); err != nil {
+				log.Printf("failed to set SSH_AUTH_SOCK: %v", err)
+			}
+
+			socketPaths = append(socketPaths, config.Socket.Path)
+
 			group.Go(func() error {
 				return agent.ListenAndServe(ctx, config.Socket.Path)
 			})
@@ -77,6 +90,25 @@ var agentCmd = &cli.Command{
 
 		default:
 			return fmt.Errorf("socket type %s is not supported", config.Socket.Type)
+		}
+
+		// Start additional soft-key agents
+		for name, agentConfig := range config.Agents {
+			if _, err := os.Stat(agentConfig.SocketPath); err == nil {
+				os.Remove(agentConfig.SocketPath)
+			}
+
+			if err := tools.MkDir(filepath.Dir(agentConfig.SocketPath), 0700); err != nil {
+				return fmt.Errorf("failed to create directory for agent %s: %w", name, err)
+			}
+
+			softAgent := sshagent.NewSoftAgent(name, agentConfig.KeepKeySeconds, log)
+			softAgents[name] = softAgent
+			socketPaths = append(socketPaths, agentConfig.SocketPath)
+
+			group.Go(func() error {
+				return softAgent.ListenAndServe(ctx, agentConfig.SocketPath)
+			})
 		}
 
 		rpcServer := rpcserver.New(agent, log)
@@ -99,6 +131,11 @@ var agentCmd = &cli.Command{
 				agent.Shutdown()
 			}
 
+			// Shutdown all soft agents
+			for _, softAgent := range softAgents {
+				softAgent.Shutdown()
+			}
+
 			if rpcServer != nil {
 				rpcServer.Shutdown()
 			}
@@ -108,10 +145,7 @@ var agentCmd = &cli.Command{
 
 		group.Go(func() error {
 			return xcmd.PeriodicRun(ctx, func(_ context.Context) error {
-				for _, path := range []string{
-					config.Socket.Path,
-					config.ControlSocketPath,
-				} {
+				for _, path := range socketPaths {
 					if stat, err := os.Stat(path); err == nil {
 						if perm := stat.Mode().Perm(); perm != 0600 {
 							log.Printf("fixing permissions on %s from %d", path, perm)

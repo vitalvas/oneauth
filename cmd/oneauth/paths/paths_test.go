@@ -32,6 +32,28 @@ func TestAgentSocket(t *testing.T) {
 	assert.Equal(t, expected, actual, "Expected result: %s, got result: %s", expected, actual)
 }
 
+func TestNamedAgentSocket(t *testing.T) {
+	home, err := os.UserHomeDir()
+	assert.Nil(t, err, "Error getting user home directory: %v", err)
+
+	tests := []struct {
+		name     string
+		expected string
+	}{
+		{"work", filepath.Join(home, oneauthDir, "ssh-agent-work.sock")},
+		{"personal", filepath.Join(home, oneauthDir, "ssh-agent-personal.sock")},
+		{"homelab", filepath.Join(home, oneauthDir, "ssh-agent-homelab.sock")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := NamedAgentSocket(tt.name)
+			assert.Nil(t, err, "Error getting named agent socket path: %v", err)
+			assert.Equal(t, tt.expected, actual, "Expected result: %s, got result: %s", tt.expected, actual)
+		})
+	}
+}
+
 func TestControlSocket(t *testing.T) {
 	home, err := os.UserHomeDir()
 	assert.Nil(t, err, "Error getting user home directory: %v", err)
