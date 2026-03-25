@@ -301,6 +301,51 @@ func TestLoadOrCreateAgentID(t *testing.T) {
 		assert.Equal(t, existingID, agentID)
 	})
 
+	t.Run("AgentIDPathIsDirectory", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpDir)
+
+		configDir := filepath.Join(tmpDir, ".oneauth")
+		err = os.MkdirAll(configDir, 0755)
+		require.NoError(t, err)
+
+		// Create agent_id as a directory instead of a file
+		agentIDPath := filepath.Join(configDir, "agent_id")
+		err = os.MkdirAll(agentIDPath, 0755)
+		require.NoError(t, err)
+
+		originalEnv := os.Getenv("HOME")
+		os.Setenv("HOME", tmpDir)
+		defer os.Setenv("HOME", originalEnv)
+
+		// Should fail because it can't write file over directory
+		_, err = LoadOrCreateAgentID()
+		assert.Error(t, err)
+	})
+
+	t.Run("UnreadableAgentIDFile", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpDir)
+
+		configDir := filepath.Join(tmpDir, ".oneauth")
+		err = os.MkdirAll(configDir, 0755)
+		require.NoError(t, err)
+
+		// Create agent_id file with no read permissions
+		agentIDPath := filepath.Join(configDir, "agent_id")
+		err = os.WriteFile(agentIDPath, []byte("some-content"), 0000)
+		require.NoError(t, err)
+
+		originalEnv := os.Getenv("HOME")
+		os.Setenv("HOME", tmpDir)
+		defer os.Setenv("HOME", originalEnv)
+
+		_, err = LoadOrCreateAgentID()
+		assert.Error(t, err)
+	})
+
 	t.Run("InvalidExistingAgentID", func(t *testing.T) {
 		// Create a temporary directory for testing
 		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
@@ -458,6 +503,44 @@ agents:
 
 		// Agents should be nil or empty
 		assert.Empty(t, config.Agents)
+	})
+
+	t.Run("AgentWithDefaultSocketPath", func(t *testing.T) {
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+keyring:
+  yubikey:
+    serial: 12345
+agents:
+  myagent:
+    keep_key_seconds: 600
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		myAgent, ok := config.Agents["myagent"]
+		assert.True(t, ok)
+		assert.NotEmpty(t, myAgent.SocketPath)
+		assert.Contains(t, myAgent.SocketPath, "ssh-agent-myagent.sock")
 	})
 
 	t.Run("AgentWithDefaultKeepKeySeconds", func(t *testing.T) {

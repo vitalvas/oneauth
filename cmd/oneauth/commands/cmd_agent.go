@@ -29,7 +29,7 @@ var agentCmd = &cli.Command{
 
 		commit := buildinfo.Commit
 		if len(commit) > 8 {
-			version += "-" + commit[:8]
+			version = fmt.Sprintf("%s-%s", version, commit[:8])
 		}
 
 		log.Printf("OneAuth version: %s", version)

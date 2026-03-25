@@ -311,7 +311,7 @@ func TestSoftAgentIntegration(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	socketPath := filepath.Join(tmpDir, "agent.sock")
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	go func() {
@@ -387,13 +387,13 @@ func TestSoftAgentMultipleKeys(t *testing.T) {
 	defer agent.Close()
 
 	// Add multiple keys
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
 		require.NoError(t, err)
 
 		err = agent.Add(sshagent.AddedKey{
 			PrivateKey: key,
-			Comment:    "test-key-" + string(rune('a'+i)),
+			Comment:    fmt.Sprintf("test-key-%c", 'a'+i),
 		})
 		require.NoError(t, err)
 	}
