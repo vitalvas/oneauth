@@ -198,3 +198,35 @@ func (t *TemporaryErrorListener) Accept() (net.Conn, error) {
 func (t *TemporaryErrorListener) Close() error { return nil }
 
 func (t *TemporaryErrorListener) Addr() net.Addr { return &mock.Addr{} }
+
+// nilAfterAcceptListener calls onAccept and returns a temporary error, allowing the loop to continue
+// and discover the nil listener on the next iteration
+type nilAfterAcceptListener struct {
+	onAccept func()
+	called   bool
+}
+
+func (n *nilAfterAcceptListener) Accept() (net.Conn, error) {
+	if !n.called {
+		n.called = true
+		if n.onAccept != nil {
+			n.onAccept()
+		}
+	}
+	return nil, &mock.TemporaryError{Message: "nil trigger"}
+}
+
+func (n *nilAfterAcceptListener) Close() error { return nil }
+
+func (n *nilAfterAcceptListener) Addr() net.Addr { return &mock.Addr{} }
+
+// permanentErrorListener returns a non-temporary error on Accept
+type permanentErrorListener struct{}
+
+func (p *permanentErrorListener) Accept() (net.Conn, error) {
+	return nil, errors.New("permanent error")
+}
+
+func (p *permanentErrorListener) Close() error { return nil }
+
+func (p *permanentErrorListener) Addr() net.Addr { return &mock.Addr{} }

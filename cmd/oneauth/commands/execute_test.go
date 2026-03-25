@@ -133,37 +133,6 @@ func TestExecuteCommandsInitialization(t *testing.T) {
 	})
 }
 
-func TestExecuteErrorHandling(t *testing.T) {
-	t.Run("ErrorHandlingStructure", func(t *testing.T) {
-		// Test that error handling structure is in place
-		// The actual error handling is done by cli.App.Run()
-
-		// We can test that the error handling pattern is sound
-		var err error
-
-		// Simulate the error handling pattern used in Execute()
-		if err != nil {
-			// This would be logged in the actual function
-			assert.NotNil(t, err)
-		}
-
-		// Test passes if no panic occurs
-		assert.Nil(t, err)
-	})
-}
-
-func TestExecuteBuildInfo(t *testing.T) {
-	t.Run("BuildInfoIntegration", func(t *testing.T) {
-		// Test that buildinfo is properly integrated
-		version := buildinfo.Version
-		// Version might be empty in test environment
-		assert.NotNil(t, version)
-
-		// Version should be used in app configuration
-		assert.Equal(t, version, getAppVersion())
-	})
-}
-
 func TestExecuteCliIntegration(t *testing.T) {
 	t.Run("CliAppCreation", func(t *testing.T) {
 		// Test that cli.App can be created with our configuration

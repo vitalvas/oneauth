@@ -301,6 +301,51 @@ func TestLoadOrCreateAgentID(t *testing.T) {
 		assert.Equal(t, existingID, agentID)
 	})
 
+	t.Run("AgentIDPathIsDirectory", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpDir)
+
+		configDir := filepath.Join(tmpDir, ".oneauth")
+		err = os.MkdirAll(configDir, 0755)
+		require.NoError(t, err)
+
+		// Create agent_id as a directory instead of a file
+		agentIDPath := filepath.Join(configDir, "agent_id")
+		err = os.MkdirAll(agentIDPath, 0755)
+		require.NoError(t, err)
+
+		originalEnv := os.Getenv("HOME")
+		os.Setenv("HOME", tmpDir)
+		defer os.Setenv("HOME", originalEnv)
+
+		// Should fail because it can't write file over directory
+		_, err = LoadOrCreateAgentID()
+		assert.Error(t, err)
+	})
+
+	t.Run("UnreadableAgentIDFile", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpDir)
+
+		configDir := filepath.Join(tmpDir, ".oneauth")
+		err = os.MkdirAll(configDir, 0755)
+		require.NoError(t, err)
+
+		// Create agent_id file with no read permissions
+		agentIDPath := filepath.Join(configDir, "agent_id")
+		err = os.WriteFile(agentIDPath, []byte("some-content"), 0000)
+		require.NoError(t, err)
+
+		originalEnv := os.Getenv("HOME")
+		os.Setenv("HOME", tmpDir)
+		defer os.Setenv("HOME", originalEnv)
+
+		_, err = LoadOrCreateAgentID()
+		assert.Error(t, err)
+	})
+
 	t.Run("InvalidExistingAgentID", func(t *testing.T) {
 		// Create a temporary directory for testing
 		tmpDir, err := os.MkdirTemp("", "oneauth-test-")
@@ -370,6 +415,308 @@ func TestConfigStruct(t *testing.T) {
 		assert.Equal(t, uint32(12345), config.Keyring.Yubikey.Serial)
 		assert.Equal(t, "echo test", config.Keyring.BeforeSignHook)
 		assert.Equal(t, int64(300), config.Keyring.KeepKeySeconds)
+	})
+}
+
+func TestAgentsConfig(t *testing.T) {
+	t.Run("LoadAgentsFromConfig", func(t *testing.T) {
+		// Set up temporary home directory
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		// Create .oneauth directory in temp home
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		// Temporarily set HOME env var
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
+		// Create a config file with agents
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+keyring:
+  yubikey:
+    serial: 12345
+agents:
+  work:
+    socket_path: "~/work-agent.sock"
+    keep_key_seconds: 3600
+  personal:
+    socket_path: "/tmp/personal-agent.sock"
+    keep_key_seconds: 7200
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		// Verify agents were loaded
+		assert.Len(t, config.Agents, 2)
+
+		// Check work agent - ~ should be expanded
+		workAgent, ok := config.Agents["work"]
+		assert.True(t, ok)
+		assert.Equal(t, filepath.Join(tmpHome, "work-agent.sock"), workAgent.SocketPath)
+		assert.Equal(t, int64(3600), workAgent.KeepKeySeconds)
+
+		// Check personal agent - absolute path unchanged
+		personalAgent, ok := config.Agents["personal"]
+		assert.True(t, ok)
+		assert.Equal(t, "/tmp/personal-agent.sock", personalAgent.SocketPath)
+		assert.Equal(t, int64(7200), personalAgent.KeepKeySeconds)
+	})
+
+	t.Run("EmptyAgentsMap", func(t *testing.T) {
+		// Set up temporary home directory
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		// Create .oneauth directory
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		_, err = tmpFile.Write([]byte("{}\n"))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		// Agents should be nil or empty
+		assert.Empty(t, config.Agents)
+	})
+
+	t.Run("AgentWithDefaultSocketPath", func(t *testing.T) {
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+keyring:
+  yubikey:
+    serial: 12345
+agents:
+  myagent:
+    keep_key_seconds: 600
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		myAgent, ok := config.Agents["myagent"]
+		assert.True(t, ok)
+		assert.NotEmpty(t, myAgent.SocketPath)
+		assert.Contains(t, myAgent.SocketPath, "ssh-agent-myagent.sock")
+	})
+
+	t.Run("AgentWithDefaultKeepKeySeconds", func(t *testing.T) {
+		// Set up temporary home directory
+		tmpHome, err := os.MkdirTemp("", "test-home-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpHome)
+
+		oneauthDir := filepath.Join(tmpHome, ".oneauth")
+		err = os.MkdirAll(oneauthDir, 0755)
+		require.NoError(t, err)
+
+		originalHome := os.Getenv("HOME")
+		os.Setenv("HOME", tmpHome)
+		defer os.Setenv("HOME", originalHome)
+
+		tmpFile, err := os.CreateTemp("", "config-*.yaml")
+		require.NoError(t, err)
+		defer os.Remove(tmpFile.Name())
+		defer tmpFile.Close()
+
+		configContent := `
+keyring:
+  yubikey:
+    serial: 12345
+agents:
+  minimal:
+    socket_path: "/tmp/minimal.sock"
+`
+		_, err = tmpFile.Write([]byte(configContent))
+		require.NoError(t, err)
+
+		config, err := Load(tmpFile.Name())
+		require.NoError(t, err)
+
+		minimalAgent, ok := config.Agents["minimal"]
+		assert.True(t, ok)
+		assert.Equal(t, "/tmp/minimal.sock", minimalAgent.SocketPath)
+		assert.Equal(t, int64(0), minimalAgent.KeepKeySeconds) // default
+	})
+}
+
+func TestExpandAgentPaths(t *testing.T) {
+	t.Run("DefaultSocketPath", func(t *testing.T) {
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"work": {
+					KeepKeySeconds: 3600,
+					// SocketPath is empty - should get default
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+
+		// Path should be set to default
+		assert.NotEmpty(t, conf.Agents["work"].SocketPath)
+		assert.Contains(t, conf.Agents["work"].SocketPath, "ssh-agent-work.sock")
+		assert.True(t, filepath.IsAbs(conf.Agents["work"].SocketPath))
+	})
+
+	t.Run("ExpandTildePath", func(t *testing.T) {
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					SocketPath: "~/test.sock",
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+
+		// Path should start with home directory, not ~
+		assert.NotContains(t, conf.Agents["test"].SocketPath, "~")
+		assert.True(t, filepath.IsAbs(conf.Agents["test"].SocketPath))
+	})
+
+	t.Run("AbsolutePathUnchanged", func(t *testing.T) {
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					SocketPath: "/absolute/path/test.sock",
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+
+		assert.Equal(t, "/absolute/path/test.sock", conf.Agents["test"].SocketPath)
+	})
+
+	t.Run("RelativePathUnchanged", func(t *testing.T) {
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					SocketPath: "relative/path/test.sock",
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+
+		assert.Equal(t, "relative/path/test.sock", conf.Agents["test"].SocketPath)
+	})
+
+	t.Run("NilAgentsMap", func(t *testing.T) {
+		conf := &Config{
+			Agents: nil,
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+	})
+
+	t.Run("EmptyAgentsMap", func(t *testing.T) {
+		conf := &Config{
+			Agents: map[string]AgentConfig{},
+		}
+
+		err := expandAgentPaths(conf)
+		require.NoError(t, err)
+	})
+
+	t.Run("ErrorOnInvalidHome", func(t *testing.T) {
+		originalHome := os.Getenv("HOME")
+		os.Unsetenv("HOME")
+		defer os.Setenv("HOME", originalHome)
+
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					SocketPath: "~/test.sock",
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		assert.Error(t, err)
+	})
+
+	t.Run("DefaultSocketPathErrorOnInvalidHome", func(t *testing.T) {
+		originalHome := os.Getenv("HOME")
+		os.Unsetenv("HOME")
+		defer os.Setenv("HOME", originalHome)
+
+		conf := &Config{
+			Agents: map[string]AgentConfig{
+				"test": {
+					KeepKeySeconds: 3600,
+				},
+			},
+		}
+
+		err := expandAgentPaths(conf)
+		assert.Error(t, err)
+	})
+}
+
+func TestAgentConfigStruct(t *testing.T) {
+	t.Run("DefaultValues", func(t *testing.T) {
+		agentConfig := AgentConfig{}
+		assert.Empty(t, agentConfig.SocketPath)
+		assert.Equal(t, int64(0), agentConfig.KeepKeySeconds)
+	})
+
+	t.Run("CompleteAgentConfig", func(t *testing.T) {
+		agentConfig := AgentConfig{
+			SocketPath:     "/tmp/agent.sock",
+			KeepKeySeconds: 3600,
+		}
+		assert.Equal(t, "/tmp/agent.sock", agentConfig.SocketPath)
+		assert.Equal(t, int64(3600), agentConfig.KeepKeySeconds)
 	})
 }
 
