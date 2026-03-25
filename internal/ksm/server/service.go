@@ -144,6 +144,11 @@ func (s *Server) DecryptOTP(otp string) (*DecryptResponse, error) {
 		}, nil
 	}
 
+	// Update key usage metadata
+	if err := s.db.UpdateKeyUsage(keyID); err != nil {
+		s.logger.WithError(err).WithField("key_id", keyID).Warn("Failed to update key usage metadata")
+	}
+
 	// Success - create response
 	return &DecryptResponse{
 		Status:        "OK",

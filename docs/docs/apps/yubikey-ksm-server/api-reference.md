@@ -63,7 +63,7 @@ Key ID must be exactly 12 modhex characters (`cbdefghijklnrtuv`)
 ## Health Check
 
 ```bash
-curl http://localhost:8002/api/v1/health
+curl http://localhost:8002/health
 ```
 
 Response:
@@ -72,7 +72,7 @@ Response:
 {
   "status": "healthy",
   "database": {
-    "status": "healthy"
+    "status": "connected"
   }
 }
 ```
@@ -117,20 +117,17 @@ Response:
 
 ```json
 {
+  "status": "success",
   "keys": [
     {
       "key_id": "cccccccccccc",
       "description": "John Doe YubiKey",
-      "created_at": "2024-01-15T10:30:45Z"
+      "created_at": "2024-01-15T10:30:45Z",
+      "last_used": "2024-01-15T12:00:00Z",
+      "usage_count": 5
     }
   ]
 }
-```
-
-### Get Key
-
-```bash
-curl http://localhost:8002/api/v1/keys/cccccccccccc
 ```
 
 ### Delete Key
@@ -169,7 +166,7 @@ Error Response:
 {
   "status": "ERROR",
   "error_code": "KEY_NOT_FOUND",
-  "message": "YubiKey not registered"
+  "message": "Key not found"
 }
 ```
 
@@ -196,7 +193,8 @@ ERR Key not found
 | Code | Description |
 |------|-------------|
 | `INVALID_OTP` | OTP format is invalid |
-| `KEY_NOT_FOUND` | YubiKey not registered |
+| `KEY_NOT_FOUND` | Key not found |
+| `REPLAY_DETECTED` | OTP has already been used |
 | `DECRYPTION_FAILED` | OTP decryption failed |
 | `INVALID_JSON` | Request body contains invalid JSON |
 | `MISSING_KEY_ID` | Key ID field is required |
@@ -215,4 +213,6 @@ ERR Key not found
 | `201` | Created |
 | `400` | Bad Request |
 | `404` | Not Found |
+| `409` | Conflict (replay detected) |
+| `422` | Unprocessable Entity (decryption failed) |
 | `500` | Server Error |

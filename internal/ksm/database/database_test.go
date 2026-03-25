@@ -52,11 +52,7 @@ func TestNew(t *testing.T) {
 			cfg := &config.DatabaseConfig{
 				Type: "postgres",
 				PostgreSQL: &config.PostgreSQLConfig{
-					Host:              "localhost",
-					Port:              5432,
-					Username:          "test",
-					Password:          "test",
-					Database:          "test",
+					URL:               "postgres://test:test@localhost:5432/test?sslmode=disable",
 					MaxConnections:    10,
 					ConnectionTimeout: 30 * time.Second,
 				},
@@ -396,11 +392,7 @@ func TestDatabaseSpecificFeatures(t *testing.T) {
 			cfg := &config.DatabaseConfig{
 				Type: "postgresql",
 				PostgreSQL: &config.PostgreSQLConfig{
-					Host:              "nonexistent-host",
-					Port:              5432,
-					Username:          "test",
-					Password:          "test",
-					Database:          "test",
+					URL:               "postgres://test:test@nonexistent-host:5432/test?sslmode=disable",
 					MaxConnections:    10,
 					ConnectionTimeout: 30 * time.Second,
 				},
@@ -792,8 +784,8 @@ func TestCounterSequenceValidation(t *testing.T) {
 			name:       "Equal counter, higher session than stored",
 			counter:    100,
 			sessionUse: 3,
-			shouldPass: true,
-			reason:     "no counter >= 100 with session >= 3 exists",
+			shouldPass: false,
+			reason:     "counter 101 and 102 already stored, so counter 100 is a replay regardless of session",
 		},
 		{
 			name:       "Higher than all stored",
@@ -826,4 +818,99 @@ func TestCounterSequenceValidation(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestReplayProtectionLexicographicOrdering(t *testing.T) {
+	cfg := &config.DatabaseConfig{
+		Type: "sqlite",
+		SQLite: &config.SQLiteConfig{
+			Path:        ":memory:",
+			JournalMode: "WAL",
+			Synchronous: "NORMAL",
+		},
+	}
+
+	db, err := New(cfg)
+	assert.NoError(t, err)
+	defer db.Close()
+
+	// Store a test key
+	key := &YubikeyKey{
+		KeyID:           "replaytest01",
+		AESKeyEncrypted: "encrypted-replay-test",
+		Description:     "Replay protection test key",
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		UsageCount:      0,
+		Active:          true,
+	}
+	err = db.StoreKey(key)
+	assert.NoError(t, err)
+
+	// Store counter (100, 1)
+	err = db.StoreCounter(&YubikeyCounter{
+		KeyID:         "replaytest01",
+		Counter:       100,
+		SessionUse:    1,
+		TimestampHigh: 100,
+		TimestampLow:  200,
+		CreatedAt:     time.Now(),
+	})
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name       string
+		counter    int
+		sessionUse int
+		shouldPass bool
+	}{
+		{
+			name:       "older counter with larger session_use should be rejected",
+			counter:    99,
+			sessionUse: 255,
+			shouldPass: false,
+		},
+		{
+			name:       "same counter same session should be rejected",
+			counter:    100,
+			sessionUse: 1,
+			shouldPass: false,
+		},
+		{
+			name:       "same counter lower session should be rejected",
+			counter:    100,
+			sessionUse: 0,
+			shouldPass: false,
+		},
+		{
+			name:       "same counter higher session should pass",
+			counter:    100,
+			sessionUse: 2,
+			shouldPass: true,
+		},
+		{
+			name:       "higher counter should pass",
+			counter:    101,
+			sessionUse: 0,
+			shouldPass: true,
+		},
+		{
+			name:       "much higher counter should pass",
+			counter:    200,
+			sessionUse: 0,
+			shouldPass: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := db.ValidateCounter("replaytest01", tt.counter, tt.sessionUse)
+			if tt.shouldPass {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "replay attack detected")
+			}
+		})
+	}
 }

@@ -32,8 +32,6 @@ func TestDefaultConfigurations(t *testing.T) {
 	t.Run("PostgreSQLConfig Default", func(t *testing.T) {
 		var config PostgreSQLConfig
 		config.Default()
-		assert.Equal(t, "localhost", config.Host)
-		assert.Equal(t, 5432, config.Port)
 		assert.Equal(t, 25, config.MaxConnections)
 		assert.Equal(t, 30*time.Second, config.ConnectionTimeout)
 	})
@@ -82,11 +80,7 @@ func TestConfigValidation(t *testing.T) {
 			Database: DatabaseConfig{
 				Type: "postgres",
 				PostgreSQL: &PostgreSQLConfig{
-					Host:              "localhost",
-					Port:              5432,
-					Database:          "testdb",
-					Username:          "testuser",
-					Password:          "testpass",
+					URL:               "postgres://testuser:testpass@localhost:5432/testdb?sslmode=disable",
 					MaxConnections:    25,
 					ConnectionTimeout: 30 * time.Second,
 				},
@@ -194,11 +188,7 @@ func TestPostgreSQLValidation(t *testing.T) {
 			Database: DatabaseConfig{
 				Type: "postgres",
 				PostgreSQL: &PostgreSQLConfig{
-					Host:              "localhost",
-					Port:              5432,
-					Database:          "testdb",
-					Username:          "testuser",
-					Password:          "testpass",
+					URL:               "postgres://testuser:testpass@localhost:5432/testdb?sslmode=disable",
 					MaxConnections:    25,
 					ConnectionTimeout: 30 * time.Second,
 				},
@@ -216,40 +206,30 @@ func TestPostgreSQLValidation(t *testing.T) {
 		assert.Contains(t, err.Error(), "PostgreSQL configuration is required")
 	})
 
-	t.Run("Empty Host", func(t *testing.T) {
+	t.Run("Empty URL", func(t *testing.T) {
 		config := createValidConfig()
-		config.Database.PostgreSQL.Host = ""
+		config.Database.PostgreSQL.URL = ""
 
 		err := config.validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "PostgreSQL host cannot be empty")
+		assert.Contains(t, err.Error(), "PostgreSQL URL cannot be empty")
 	})
 
-	t.Run("Invalid Port", func(t *testing.T) {
+	t.Run("Invalid URL scheme", func(t *testing.T) {
 		config := createValidConfig()
-		config.Database.PostgreSQL.Port = 0
+		config.Database.PostgreSQL.URL = "mysql://user:pass@localhost/db"
 
 		err := config.validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "PostgreSQL port must be positive")
+		assert.Contains(t, err.Error(), "PostgreSQL URL must use postgres:// or postgresql:// scheme")
 	})
 
-	t.Run("Empty Database Name", func(t *testing.T) {
+	t.Run("Valid postgresql scheme", func(t *testing.T) {
 		config := createValidConfig()
-		config.Database.PostgreSQL.Database = ""
+		config.Database.PostgreSQL.URL = "postgresql://user:pass@localhost:5432/db"
 
 		err := config.validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "PostgreSQL database name cannot be empty")
-	})
-
-	t.Run("Empty Username", func(t *testing.T) {
-		config := createValidConfig()
-		config.Database.PostgreSQL.Username = ""
-
-		err := config.validate()
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "PostgreSQL username cannot be empty")
+		assert.NoError(t, err)
 	})
 
 	t.Run("Invalid MaxConnections", func(t *testing.T) {
@@ -435,20 +415,12 @@ func TestConfigStructures(t *testing.T) {
 
 	t.Run("PostgreSQL Config Structure", func(t *testing.T) {
 		config := PostgreSQLConfig{
-			Host:              "pghost",
-			Port:              5433,
-			Database:          "mydb",
-			Username:          "user",
-			Password:          "pass",
+			URL:               "postgres://user:pass@pghost:5433/mydb",
 			MaxConnections:    50,
 			ConnectionTimeout: 60 * time.Second,
 		}
 
-		assert.Equal(t, "pghost", config.Host)
-		assert.Equal(t, 5433, config.Port)
-		assert.Equal(t, "mydb", config.Database)
-		assert.Equal(t, "user", config.Username)
-		assert.Equal(t, "pass", config.Password)
+		assert.Equal(t, "postgres://user:pass@pghost:5433/mydb", config.URL)
 		assert.Equal(t, 50, config.MaxConnections)
 		assert.Equal(t, 60*time.Second, config.ConnectionTimeout)
 	})

@@ -105,6 +105,16 @@ func TestErrorMapping(t *testing.T) {
 				expectedStatus: http.StatusUnprocessableEntity,
 			},
 			{
+				name:           "invalid OTP from DecryptOTP",
+				errorCode:      "INVALID_OTP",
+				expectedStatus: http.StatusBadRequest,
+			},
+			{
+				name:           "replay detected from DecryptOTP",
+				errorCode:      "REPLAY_DETECTED",
+				expectedStatus: http.StatusConflict,
+			},
+			{
 				name:           "unknown error",
 				errorCode:      "UNKNOWN_ERROR",
 				expectedStatus: http.StatusInternalServerError,

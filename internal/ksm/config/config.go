@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/vitalvas/gokit/xconfig"
@@ -35,11 +36,7 @@ type DatabaseConfig struct {
 }
 
 type PostgreSQLConfig struct {
-	Host              string        `json:"host" yaml:"host"`
-	Port              int           `json:"port" yaml:"port"`
-	Database          string        `json:"database" yaml:"database"`
-	Username          string        `json:"username" yaml:"username"`
-	Password          string        `json:"password" yaml:"password"`
+	URL               string        `json:"url" yaml:"url"`
 	MaxConnections    int           `json:"max_connections" yaml:"max_connections"`
 	ConnectionTimeout time.Duration `json:"connection_timeout" yaml:"connection_timeout"`
 }
@@ -71,8 +68,6 @@ func (c *DatabaseConfig) Default() {
 
 func (c *PostgreSQLConfig) Default() {
 	*c = PostgreSQLConfig{
-		Host:              "localhost",
-		Port:              5432,
 		MaxConnections:    25,
 		ConnectionTimeout: 30 * time.Second,
 	}
@@ -145,17 +140,15 @@ func (c *Config) validate() error {
 
 func (c *Config) validatePostgreSQL() error {
 	pg := c.Database.PostgreSQL
-	if pg.Host == "" {
-		return fmt.Errorf("PostgreSQL host cannot be empty")
+	if pg.URL == "" {
+		return fmt.Errorf("PostgreSQL URL cannot be empty")
 	}
-	if pg.Port <= 0 {
-		return fmt.Errorf("PostgreSQL port must be positive")
+	parsed, err := url.Parse(pg.URL)
+	if err != nil {
+		return fmt.Errorf("PostgreSQL URL is invalid: %w", err)
 	}
-	if pg.Database == "" {
-		return fmt.Errorf("PostgreSQL database name cannot be empty")
-	}
-	if pg.Username == "" {
-		return fmt.Errorf("PostgreSQL username cannot be empty")
+	if parsed.Scheme != "postgres" && parsed.Scheme != "postgresql" {
+		return fmt.Errorf("PostgreSQL URL must use postgres:// or postgresql:// scheme")
 	}
 	if pg.MaxConnections <= 0 {
 		return fmt.Errorf("PostgreSQL max connections must be positive")

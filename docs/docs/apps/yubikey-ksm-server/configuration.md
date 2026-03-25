@@ -44,11 +44,9 @@ database:
 database:
   type: postgres
   postgres:
-    host: localhost
-    port: 5432
-    database: yubikey_ksm
-    username: ksm_user
-    password: secret_password
+    url: "postgres://ksm_user:secret_password@localhost:5432/yubikey_ksm?sslmode=disable"
+    max_connections: 25
+    connection_timeout: 30s
 ```
 
 ## Security

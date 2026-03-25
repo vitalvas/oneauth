@@ -160,11 +160,11 @@ func (s *SQLite) UpdateKeyUsage(keyID string) error {
 func (s *SQLite) ValidateCounter(keyID string, counter, sessionUse int) error {
 	query := `
 		SELECT COUNT(*) FROM yubikey_counters
-		WHERE key_id = ? AND counter >= ? AND session_use >= ?
+		WHERE key_id = ? AND (counter > ? OR (counter = ? AND session_use >= ?))
 	`
 
 	var count int
-	err := s.db.QueryRow(query, keyID, counter, sessionUse).Scan(&count)
+	err := s.db.QueryRow(query, keyID, counter, counter, sessionUse).Scan(&count)
 	if err != nil {
 		return err
 	}

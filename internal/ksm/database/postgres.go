@@ -15,16 +15,7 @@ type PostgreSQL struct {
 }
 
 func NewPostgreSQL(config *config.PostgreSQLConfig) (*PostgreSQL, error) {
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database,
-	)
-
-	db, err := sql.Open("pgx", dsn)
+	db, err := sql.Open("pgx", config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -163,11 +154,11 @@ func (pg *PostgreSQL) UpdateKeyUsage(keyID string) error {
 func (pg *PostgreSQL) ValidateCounter(keyID string, counter, sessionUse int) error {
 	query := `
 		SELECT COUNT(*) FROM yubikey_counters
-		WHERE key_id = $1 AND counter >= $2 AND session_use >= $3
+		WHERE key_id = $1 AND (counter > $2 OR (counter = $3 AND session_use >= $4))
 	`
 
 	var count int
-	err := pg.db.QueryRow(query, keyID, counter, sessionUse).Scan(&count)
+	err := pg.db.QueryRow(query, keyID, counter, counter, sessionUse).Scan(&count)
 	if err != nil {
 		return err
 	}

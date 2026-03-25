@@ -35,7 +35,7 @@ YubiKey AES keys and decrypts OTPs locally.
 3. **Test**:
 
    ```bash
-   curl http://localhost:8002/api/v1/health
+   curl http://localhost:8002/health
    ```
 
 ## Basic Usage

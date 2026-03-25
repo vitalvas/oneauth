@@ -29,11 +29,11 @@ func (s *Server) sendTEXTResponse(w http.ResponseWriter, statusCode int, message
 
 func (s *Server) mapErrorCodeToHTTPStatus(errorCode string) int {
 	switch errorCode {
-	case "INVALID_OTP_FORMAT", "INVALID_KEY_ID", "MISSING_OTP":
+	case "INVALID_OTP", "INVALID_OTP_FORMAT", "INVALID_KEY_ID", "MISSING_OTP":
 		return http.StatusBadRequest
 	case "KEY_NOT_FOUND":
 		return http.StatusNotFound
-	case "REPLAY_ATTACK":
+	case "REPLAY_DETECTED", "REPLAY_ATTACK":
 		return http.StatusConflict
 	case "DECRYPTION_FAILED", "OTP_DECRYPTION_FAILED":
 		return http.StatusUnprocessableEntity
