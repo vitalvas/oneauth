@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSignRequest(t *testing.T) {
@@ -203,6 +205,186 @@ func TestNewYubiAuth(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestVerify(t *testing.T) {
+	validOTP := "cccccbhuinjdrvtgbgrbrcikvrtvulvltkdufcrngunn"
+
+	t.Run("InvalidOTP", func(t *testing.T) {
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: []byte("testsecret"),
+		}
+
+		resp, err := auth.Verify("invalid-otp")
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "failed to validate otp")
+	})
+
+	t.Run("ShortOTP", func(t *testing.T) {
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: []byte("testsecret"),
+		}
+
+		resp, err := auth.Verify("cccccb")
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("VerifyWithMockServer", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("status=OK\ntimestamp=12345\nsessioncounter=1\nsessionuse=2\n"))
+		}))
+		defer mockServer.Close()
+
+		// Save original servers and restore after
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: []byte("testsecret"),
+		}
+
+		resp, err := auth.Verify(validOTP)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "OK", resp.Status)
+		assert.Equal(t, int64(12345), resp.Timestamp)
+		assert.Equal(t, int64(1), resp.SessionCounter)
+		assert.Equal(t, int64(2), resp.SessionUse)
+	})
+
+	t.Run("VerifyWithoutSecret", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("status=OK\ntimestamp=100\n"))
+		}))
+		defer mockServer.Close()
+
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: nil,
+		}
+
+		resp, err := auth.Verify(validOTP)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "OK", resp.Status)
+	})
+
+	t.Run("VerifyAllServersFail", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer mockServer.Close()
+
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: []byte("testsecret"),
+		}
+
+		resp, err := auth.Verify(validOTP)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Contains(t, err.Error(), "failed to make request to all yubico servers")
+	})
+
+	t.Run("VerifyServerErrorCode", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("status=BACKEND_ERROR\n"))
+		}))
+		defer mockServer.Close()
+
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{
+			clientID:     12345,
+			clientSecret: []byte("testsecret"),
+		}
+
+		resp, err := auth.Verify(validOTP)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+	})
+}
+
+func TestGetVerify(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("status=OK\ntimestamp=999\n"))
+		}))
+		defer mockServer.Close()
+
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{clientID: 1}
+		params := url.Values{"otp": {"test"}}
+
+		resp, err := auth.getVerify(params)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "OK", resp.Status)
+	})
+
+	t.Run("AllServersFail", func(t *testing.T) {
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer mockServer.Close()
+
+		originalServers := yubiCloudServers
+		yubiCloudServers = []string{mockServer.URL}
+		defer func() { yubiCloudServers = originalServers }()
+
+		auth := &YubiAuth{clientID: 1}
+		params := url.Values{"otp": {"test"}}
+
+		resp, err := auth.getVerify(params)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("ServerErrorCodes", func(t *testing.T) {
+		for _, code := range serverErrorCodes {
+			t.Run(code, func(t *testing.T) {
+				mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintf(w, "status=%s\n", code)
+				}))
+				defer mockServer.Close()
+
+				originalServers := yubiCloudServers
+				yubiCloudServers = []string{mockServer.URL}
+				defer func() { yubiCloudServers = originalServers }()
+
+				auth := &YubiAuth{clientID: 1}
+				params := url.Values{"otp": {"test"}}
+
+				resp, err := auth.getVerify(params)
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			})
+		}
+	})
 }
 
 func TestMakeRequest(t *testing.T) {

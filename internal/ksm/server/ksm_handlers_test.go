@@ -1,12 +1,14 @@
 package server
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vitalvas/oneauth/internal/yksoft"
 )
 
 func TestHandleKSMDecrypt_MissingOTP(t *testing.T) {
@@ -59,7 +61,7 @@ func TestHandleKSMDecrypt_WithStoredKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Now try to decrypt with that key
-	req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj", nil)
+	req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv", nil)
 	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -138,7 +140,7 @@ func TestKSMProtocolCompatibility(t *testing.T) {
 		},
 		{
 			name:         "key not found",
-			queryParams:  "otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj",
+			queryParams:  "otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
 			expectedCode: http.StatusOK,
 			containsText: "ERR",
 		},
@@ -216,7 +218,7 @@ func TestKSMEndToEnd(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test KSM decrypt endpoint
-	req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj", nil)
+	req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv", nil)
 	assert.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -226,6 +228,90 @@ func TestKSMEndToEnd(t *testing.T) {
 	assert.Equal(t, "text/plain", rr.Header().Get("Content-Type"))
 	// Response should not be "key not found"
 	assert.NotContains(t, rr.Body.String(), "YubiKey not registered")
+}
+
+func TestHandleKSMDecrypt_DecryptionFailed(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Store a key so GetKey succeeds
+	err := server.StoreKey("cccccccccccc", "MTIzNDU2Nzg5MDEyMzQ1Ng", "Test key")
+	assert.NoError(t, err)
+
+	// OTP with correct key ID but arbitrary encrypted data - will fail during OTP decryption
+	req, err := http.NewRequest(http.MethodGet, "/wsapi/decrypt/?otp=ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleKSMDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "text/plain", rr.Header().Get("Content-Type"))
+	assert.Contains(t, rr.Body.String(), "ERR Decryption failed")
+}
+
+func TestHandleKSMDecrypt_ErrorResponseFormats(t *testing.T) {
+	tests := []struct {
+		name           string
+		setupKey       bool
+		otp            string
+		expectedCode   int
+		expectedPrefix string
+	}{
+		{
+			name:           "missing OTP returns 400",
+			setupKey:       false,
+			otp:            "",
+			expectedCode:   http.StatusBadRequest,
+			expectedPrefix: "ERR Missing OTP parameter",
+		},
+		{
+			name:           "invalid OTP returns 200 with ERR",
+			setupKey:       false,
+			otp:            "invalid",
+			expectedCode:   http.StatusOK,
+			expectedPrefix: "ERR",
+		},
+		{
+			name:           "key not found returns 200 with ERR",
+			setupKey:       false,
+			otp:            "ddddddddddddjktuvurlnlnvghubeukgkejrliudllkv",
+			expectedCode:   http.StatusOK,
+			expectedPrefix: "ERR Key not found",
+		},
+		{
+			name:           "decryption failed returns 200 with ERR",
+			setupKey:       true,
+			otp:            "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
+			expectedCode:   http.StatusOK,
+			expectedPrefix: "ERR Decryption failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := setupTestServer(t)
+
+			if tt.setupKey {
+				err := server.StoreKey("cccccccccccc", "MTIzNDU2Nzg5MDEyMzQ1Ng", "Test key")
+				assert.NoError(t, err)
+			}
+
+			url := "/wsapi/decrypt/"
+			if tt.otp != "" {
+				url = fmt.Sprintf("%s?otp=%s", url, tt.otp)
+			}
+
+			req, err := http.NewRequest(http.MethodGet, url, nil)
+			assert.NoError(t, err)
+
+			rr := httptest.NewRecorder()
+			server.handleKSMDecrypt(rr, req)
+
+			assert.Equal(t, tt.expectedCode, rr.Code)
+			assert.Equal(t, "text/plain", rr.Header().Get("Content-Type"))
+			assert.Contains(t, rr.Body.String(), tt.expectedPrefix)
+		})
+	}
 }
 
 func TestKSMConcurrentRequests(t *testing.T) {
@@ -246,7 +332,7 @@ func TestKSMConcurrentRequests(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func(i int) {
 			keyID := fmt.Sprintf("cccccccccc%s", modhexChars[i%5])
-			otp := fmt.Sprintf("%sjktuvurlnlnvghubeukgkejrliudllkvj", keyID)
+			otp := fmt.Sprintf("%sjktuvurlnlnvghubeukgkejrliudllkv", keyID)
 
 			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/wsapi/decrypt/?otp=%s", otp), nil)
 			assert.NoError(t, err)
@@ -263,4 +349,34 @@ func TestKSMConcurrentRequests(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		<-done
 	}
+}
+
+func TestHandleKSMDecrypt_SuccessfulDecryptWithYksoft(t *testing.T) {
+	server := setupTestServer(t)
+
+	aesKey := []byte("1234567890123456")
+	yk, err := yksoft.NewSoftwareYubikey(&yksoft.Config{
+		KeyID:     "cccccccccccc",
+		PrivateID: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06},
+		AESKey:    aesKey,
+	})
+	assert.NoError(t, err)
+
+	aesKeyB64 := base64.RawURLEncoding.EncodeToString(aesKey)
+	err = server.StoreKey(yk.GetKeyID(), aesKeyB64, "Test key")
+	assert.NoError(t, err)
+
+	otpResult, err := yk.GenerateOTP()
+	assert.NoError(t, err)
+
+	url := fmt.Sprintf("/wsapi/decrypt/?otp=%s", otpResult.OTP)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleKSMDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "text/plain", rr.Header().Get("Content-Type"))
+	assert.Contains(t, rr.Body.String(), "OK counter=")
 }

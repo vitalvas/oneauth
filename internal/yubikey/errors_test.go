@@ -2,6 +2,7 @@ package yubikey
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,8 +51,8 @@ func TestErrorComparison(t *testing.T) {
 
 func TestErrorWrapping(t *testing.T) {
 	// Test that our errors can be wrapped and unwrapped
-	wrappedErr1 := errors.New("wrapper: " + ErrCardReaderUnavailable.Error())
-	wrappedErr2 := errors.New("wrapper: " + ErrYubikeyNotOpen.Error())
+	wrappedErr1 := fmt.Errorf("wrapper: %s", ErrCardReaderUnavailable.Error())
+	wrappedErr2 := fmt.Errorf("wrapper: %s", ErrYubikeyNotOpen.Error())
 
 	assert.Contains(t, wrappedErr1.Error(), ErrCardReaderUnavailable.Error())
 	assert.Contains(t, wrappedErr2.Error(), ErrYubikeyNotOpen.Error())

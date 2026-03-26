@@ -8,53 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetYubikeyAccount(t *testing.T) {
-	tests := []struct {
-		name     string
-		keyID    uint32
-		keyName  string
-		expected string
-	}{
-		{
-			name:     "Basic account format",
-			keyID:    12345,
-			keyName:  "test-key",
-			expected: "yubikey:12345:test-key",
-		},
-		{
-			name:     "Zero key ID",
-			keyID:    0,
-			keyName:  "zero-key",
-			expected: "yubikey:0:zero-key",
-		},
-		{
-			name:     "Max uint32 key ID",
-			keyID:    4294967295,
-			keyName:  "max-key",
-			expected: "yubikey:4294967295:max-key",
-		},
-		{
-			name:     "Empty key name",
-			keyID:    123,
-			keyName:  "",
-			expected: "yubikey:123:",
-		},
-		{
-			name:     "Key name with special characters",
-			keyID:    456,
-			keyName:  "key-name_with.special@chars",
-			expected: "yubikey:456:key-name_with.special@chars",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetYubikeyAccount(tt.keyID, tt.keyName)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestErrorConstants(t *testing.T) {
 	assert.Equal(t, "secret not found in keyring", ErrNotFound.Error())
 	assert.Equal(t, "timeout while trying to set secret in keyring", ErrTimeoutSetSecret.Error())

@@ -14,7 +14,3 @@ func GetSSHPublicKey(key crypto.PublicKey) ([]byte, error) {
 
 	return ssh.MarshalAuthorizedKey(sshKey), nil
 }
-
-func SSHFingerprint(key ssh.PublicKey) string {
-	return ssh.FingerprintSHA256(key)
-}

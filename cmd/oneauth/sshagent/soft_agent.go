@@ -202,7 +202,7 @@ func (a *SoftAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent
 		return nil, ErrAgentLocked
 	}
 
-	fp := tools.SSHFingerprint(reqKey)
+	fp := ssh.FingerprintSHA256(reqKey)
 	dataHash := tools.FastHash(data)
 
 	a.log.Println("request to sign payload:", dataHash)
@@ -246,7 +246,7 @@ func (a *SoftAgent) Remove(reqKey ssh.PublicKey) error {
 		return ErrAgentLocked
 	}
 
-	fp := tools.SSHFingerprint(reqKey)
+	fp := ssh.FingerprintSHA256(reqKey)
 	a.softKeys.Remove(fp)
 
 	return nil

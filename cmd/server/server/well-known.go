@@ -29,7 +29,7 @@ func (s *Server) generateSecurityTxt() string {
 		lines = append(lines, fmt.Sprintf("%s: %s", field, value))
 	}
 
-	return strings.Join(lines, "\n") + "\n"
+	return fmt.Sprintf("%s\n", strings.Join(lines, "\n"))
 }
 
 func (s *Server) wellKnownSecurityTxt(w http.ResponseWriter, _ *http.Request) {

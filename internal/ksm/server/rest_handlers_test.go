@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/vitalvas/oneauth/internal/yksoft"
 )
 
 func TestHandleRESTDecrypt_Success(t *testing.T) {
@@ -21,7 +23,7 @@ func TestHandleRESTDecrypt_Success(t *testing.T) {
 
 	// Test REST decrypt
 	reqBody := map[string]string{
-		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj",
+		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
 	}
 	jsonBody, _ := json.Marshal(reqBody)
 
@@ -346,7 +348,7 @@ func TestRESTAPIEndToEnd(t *testing.T) {
 
 	// 3. Try to decrypt with the stored key
 	decryptReq := map[string]string{
-		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj",
+		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
 	}
 	jsonBody, _ = json.Marshal(decryptReq)
 
@@ -431,7 +433,7 @@ func TestCompleteRESTAPIWorkflow(t *testing.T) {
 			name: "OTP with first key",
 			run: func(t *testing.T) {
 				reqBody := map[string]string{
-					"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkvj",
+					"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
 				}
 				jsonBody, _ := json.Marshal(reqBody)
 
@@ -452,7 +454,7 @@ func TestCompleteRESTAPIWorkflow(t *testing.T) {
 			name: "OTP with second key",
 			run: func(t *testing.T) {
 				reqBody := map[string]string{
-					"otp": "dddddddddddduvghubeukgkejrliudllkvjjktuvurlnln",
+					"otp": "ddddddddddddjktuvurlnlnvghubeukgkejrliudllkv",
 				}
 				jsonBody, _ := json.Marshal(reqBody)
 
@@ -508,4 +510,471 @@ func TestCompleteRESTAPIWorkflow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, tt.run)
 	}
+}
+
+func TestHandleStoreKey_InvalidJSON(t *testing.T) {
+	server := setupTestServer(t)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBufferString("not json"))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_JSON", response["error_code"])
+}
+
+func TestHandleStoreKey_MissingKeyID(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"aes_key":     "MTIzNDU2Nzg5MDEyMzQ1Ng",
+		"description": "Test key",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "MISSING_KEY_ID", response["error_code"])
+}
+
+func TestHandleStoreKey_MissingAESKey(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"key_id":      "cccccccccccc",
+		"description": "Test key",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "MISSING_AES_KEY", response["error_code"])
+}
+
+func TestHandleStoreKey_InvalidModhexCharacter(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"key_id":      "ccccccccccXX",
+		"aes_key":     "MTIzNDU2Nzg5MDEyMzQ1Ng",
+		"description": "Test key",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_KEY_ID_FORMAT", response["error_code"])
+}
+
+func TestHandleStoreKey_InvalidAESKeyLength(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"key_id":      "cccccccccccc",
+		"aes_key":     "MTIzNDU2Nzg5MA==", // only 10 bytes
+		"description": "Test key",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_AES_KEY_LENGTH", response["error_code"])
+}
+
+func TestHandleListKeys_EmptyList(t *testing.T) {
+	server := setupTestServer(t)
+
+	req, err := http.NewRequest(http.MethodGet, "/api/v1/keys", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleListKeys(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response["status"])
+
+	keys, ok := response["keys"].([]interface{})
+	assert.True(t, ok)
+	assert.Empty(t, keys)
+}
+
+func TestHandleDeleteKey_NonExistentKey(t *testing.T) {
+	server := setupTestServer(t)
+
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/keys/cccccccccccc", nil)
+	assert.NoError(t, err)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/api/v1/keys/{key_id}", server.handleDeleteKey).Methods(http.MethodDelete)
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	// DeleteKey is a soft-delete (SQL UPDATE) that does not return an error
+	// for non-existent keys, so the handler returns 200 with success response
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response["status"])
+}
+
+func TestHandleRESTDecrypt_InvalidOTP(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"otp": "invalid-otp-format",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleRESTDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response DecryptResponse
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "ERROR", response.Status)
+	assert.Equal(t, "INVALID_OTP", response.ErrorCode)
+}
+
+func TestHandleRESTDecrypt_KeyNotFound(t *testing.T) {
+	server := setupTestServer(t)
+
+	reqBody := map[string]string{
+		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleRESTDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+
+	var response DecryptResponse
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "ERROR", response.Status)
+	assert.Equal(t, "KEY_NOT_FOUND", response.ErrorCode)
+}
+
+func TestHandleRESTDecrypt_DecryptionFailed(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Store a key so GetKey succeeds
+	err := server.StoreKey("cccccccccccc", "MTIzNDU2Nzg5MDEyMzQ1Ng", "Test key")
+	assert.NoError(t, err)
+
+	// Use valid 44-char modhex OTP with matching key ID but arbitrary encrypted data
+	reqBody := map[string]string{
+		"otp": "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleRESTDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusUnprocessableEntity, rr.Code)
+
+	var response DecryptResponse
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "ERROR", response.Status)
+	assert.Equal(t, "DECRYPTION_FAILED", response.ErrorCode)
+}
+
+func TestHandleRESTDecrypt_EmptyBody(t *testing.T) {
+	server := setupTestServer(t)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBufferString(""))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleRESTDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
+func TestHandleRESTDecrypt_ErrorCodeMapping(t *testing.T) {
+	tests := []struct {
+		name           string
+		setupKey       bool
+		otp            string
+		expectedStatus int
+		expectedCode   string
+	}{
+		{
+			name:           "invalid OTP returns 400",
+			setupKey:       false,
+			otp:            "tooshort",
+			expectedStatus: http.StatusBadRequest,
+			expectedCode:   "INVALID_OTP",
+		},
+		{
+			name:           "key not found returns 404",
+			setupKey:       false,
+			otp:            "ddddddddddddjktuvurlnlnvghubeukgkejrliudllkv",
+			expectedStatus: http.StatusNotFound,
+			expectedCode:   "KEY_NOT_FOUND",
+		},
+		{
+			name:           "decryption failed returns 422",
+			setupKey:       true,
+			otp:            "ccccccccccccjktuvurlnlnvghubeukgkejrliudllkv",
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedCode:   "DECRYPTION_FAILED",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := setupTestServer(t)
+
+			if tt.setupKey {
+				err := server.StoreKey("cccccccccccc", "MTIzNDU2Nzg5MDEyMzQ1Ng", "Test key")
+				assert.NoError(t, err)
+			}
+
+			reqBody := map[string]string{"otp": tt.otp}
+			jsonBody, _ := json.Marshal(reqBody)
+
+			req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBuffer(jsonBody))
+			assert.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+
+			rr := httptest.NewRecorder()
+			server.handleRESTDecrypt(rr, req)
+
+			assert.Equal(t, tt.expectedStatus, rr.Code)
+
+			var response DecryptResponse
+			err = json.Unmarshal(rr.Body.Bytes(), &response)
+			assert.NoError(t, err)
+			assert.Equal(t, "ERROR", response.Status)
+			assert.Equal(t, tt.expectedCode, response.ErrorCode)
+		})
+	}
+}
+
+func TestHandleStoreKey_DatabaseStorageError(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Close the DB to force a storage error (not an input validation error)
+	server.db.Close()
+
+	reqBody := map[string]string{
+		"key_id":      "cccccccccccc",
+		"aes_key":     "MTIzNDU2Nzg5MDEyMzQ1Ng",
+		"description": "Test key",
+	}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/keys", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleStoreKey(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "STORAGE_ERROR", response["error_code"])
+}
+
+func TestHandleListKeys_DatabaseError(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Close DB to force error
+	server.db.Close()
+
+	req, err := http.NewRequest(http.MethodGet, "/api/v1/keys", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleListKeys(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "LIST_ERROR", response["error_code"])
+}
+
+func TestHandleDeleteKey_DatabaseError(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Close DB to force error
+	server.db.Close()
+
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/keys/cccccccccccc", nil)
+	assert.NoError(t, err)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/api/v1/keys/{key_id}", server.handleDeleteKey).Methods(http.MethodDelete)
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "DELETE_ERROR", response["error_code"])
+}
+
+func TestHandleDeleteKey_EmptyKeyIDDirect(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Call handler directly without mux router so mux.Vars returns empty map
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/keys/", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleDeleteKey(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "MISSING_KEY_ID", response["error_code"])
+}
+
+func TestHandleListKeys_ResponseFormat(t *testing.T) {
+	server := setupTestServer(t)
+
+	// Store a key and verify the response format includes all expected fields
+	err := server.StoreKey("cccccccccccc", "MTIzNDU2Nzg5MDEyMzQ1Ng", "Test key")
+	assert.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodGet, "/api/v1/keys", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	server.handleListKeys(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+
+	var response map[string]interface{}
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", response["status"])
+
+	keys := response["keys"].([]interface{})
+	assert.Len(t, keys, 1)
+
+	key := keys[0].(map[string]interface{})
+	assert.Equal(t, "cccccccccccc", key["key_id"])
+	assert.Equal(t, "Test key", key["description"])
+	assert.Contains(t, key, "created_at")
+	assert.Contains(t, key, "usage_count")
+}
+
+func TestHandleRESTDecrypt_SuccessWithYksoft(t *testing.T) {
+	server := setupTestServer(t)
+
+	aesKey := []byte("1234567890123456")
+	yk, err := yksoft.NewSoftwareYubikey(&yksoft.Config{
+		KeyID:     "cccccccccccc",
+		PrivateID: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06},
+		AESKey:    aesKey,
+	})
+	assert.NoError(t, err)
+
+	aesKeyB64 := base64.RawURLEncoding.EncodeToString(aesKey)
+	err = server.StoreKey(yk.GetKeyID(), aesKeyB64, "Test key")
+	assert.NoError(t, err)
+
+	otpResult, err := yk.GenerateOTP()
+	assert.NoError(t, err)
+
+	reqBody := map[string]string{"otp": otpResult.OTP}
+	jsonBody, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest(http.MethodPost, "/api/v1/decrypt", bytes.NewBuffer(jsonBody))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	server.handleRESTDecrypt(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var response DecryptResponse
+	err = json.Unmarshal(rr.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "OK", response.Status)
+	assert.Equal(t, "cccccccccccc", response.KeyID)
 }

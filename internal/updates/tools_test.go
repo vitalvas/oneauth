@@ -11,29 +11,15 @@ import (
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 )
 
-func TestGetUserAgent(t *testing.T) {
-	tests := []struct {
-		appName  string
-		expected string
-	}{
-		{"MyApp", fmt.Sprintf("Mozilla/5.0 (compatible; MyApp/%s; os/%s; arch/%s)", buildinfo.Version, buildinfo.OS, buildinfo.ARCH)},
-		{"AnotherApp", fmt.Sprintf("Mozilla/5.0 (compatible; AnotherApp/%s; os/%s; arch/%s)", buildinfo.Version, buildinfo.OS, buildinfo.ARCH)},
-	}
-
-	for _, test := range tests {
-		t.Run(test.appName, func(t *testing.T) {
-			result := getUserAget(test.appName)
-			if result != test.expected {
-				t.Errorf("Expected: %s, Got: %s", test.expected, result)
-			}
-		})
-	}
-}
-
 func TestGetJSON(t *testing.T) {
+	expectedUA := fmt.Sprintf(
+		"Mozilla/5.0 (compatible; %s/%s; os/%s; arch/%s)",
+		"TestApp", buildinfo.Version, buildinfo.OS, buildinfo.ARCH,
+	)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate a successful response with JSON data.
-		if r.Header.Get("User-Agent") != getUserAget("TestApp") {
+		if r.Header.Get("User-Agent") != expectedUA {
 			http.Error(w, "Invalid User-Agent", http.StatusBadRequest)
 			return
 		}
@@ -62,22 +48,22 @@ func TestGetJSON(t *testing.T) {
 	}{
 		{
 			description: "Successful response",
-			remote:      server.URL + "/success",
+			remote:      fmt.Sprintf("%s/success", server.URL),
 			expectedErr: nil,
 		},
 		{
 			description: "Not Found response",
-			remote:      server.URL + "/notfound",
+			remote:      fmt.Sprintf("%s/notfound", server.URL),
 			expectedErr: ErrUpdateNotFound,
 		},
 		{
 			description: "Forbidden response",
-			remote:      server.URL + "/forbidden",
+			remote:      fmt.Sprintf("%s/forbidden", server.URL),
 			expectedErr: ErrUpdateForbidden,
 		},
 		{
 			description: "Unexpected status code",
-			remote:      server.URL + "/unknown",
+			remote:      fmt.Sprintf("%s/unknown", server.URL),
 			expectedErr: errors.New("unexpected status code: 500"),
 		},
 	}

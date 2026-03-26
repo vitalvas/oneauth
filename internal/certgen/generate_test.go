@@ -225,59 +225,6 @@ func TestGenCertificateFor_ZeroDays(t *testing.T) {
 	assert.True(t, duration <= 24*time.Hour)
 }
 
-func TestGenCommonName(t *testing.T) {
-	tests := []struct {
-		name     string
-		user     string
-		hostName string
-		expected string
-	}{
-		{
-			name:     "Basic format",
-			user:     "testuser",
-			hostName: "example.com",
-			expected: "testuser@example.com",
-		},
-		{
-			name:     "Empty user",
-			user:     "",
-			hostName: "example.com",
-			expected: "@example.com",
-		},
-		{
-			name:     "Empty hostname",
-			user:     "testuser",
-			hostName: "",
-			expected: "testuser@",
-		},
-		{
-			name:     "Both empty",
-			user:     "",
-			hostName: "",
-			expected: "@",
-		},
-		{
-			name:     "Special characters",
-			user:     "test.user+tag",
-			hostName: "sub.domain.example.com",
-			expected: "test.user+tag@sub.domain.example.com",
-		},
-		{
-			name:     "Numbers and hyphens",
-			user:     "user123",
-			hostName: "host-1.example-domain.org",
-			expected: "user123@host-1.example-domain.org",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GenCommonName(tt.user, tt.hostName)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestParseExtraNames(t *testing.T) {
 	tests := []struct {
 		name        string

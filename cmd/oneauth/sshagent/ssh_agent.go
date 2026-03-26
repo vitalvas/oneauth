@@ -73,7 +73,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 		return nil, ErrAgentLocked
 	}
 
-	fp := tools.SSHFingerprint(reqKey)
+	fp := ssh.FingerprintSHA256(reqKey)
 
 	if a.yk == nil {
 		return nil, fmt.Errorf("no yubikey available")
@@ -94,7 +94,7 @@ func (a *SSHAgent) SignWithFlags(reqKey ssh.PublicKey, data []byte, flags agent.
 			return nil, fmt.Errorf("failed to create ssh public key for sing: %w", err)
 		}
 
-		if fp != tools.SSHFingerprint(sshPublicKey) {
+		if fp != ssh.FingerprintSHA256(sshPublicKey) {
 			continue
 		}
 

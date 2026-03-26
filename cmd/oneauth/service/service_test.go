@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,8 +58,8 @@ func TestErrorComparison(t *testing.T) {
 func TestErrorWrapping(t *testing.T) {
 	t.Run("WrappedErrors", func(t *testing.T) {
 		// Test that errors can be wrapped
-		wrappedNotInstalled := errors.New("wrapped: " + ErrNotInstalled.Error())
-		wrappedNotImplemented := errors.New("wrapped: " + ErrNotImplemented.Error())
+		wrappedNotInstalled := fmt.Errorf("wrapped: %s", ErrNotInstalled.Error())
+		wrappedNotImplemented := fmt.Errorf("wrapped: %s", ErrNotImplemented.Error())
 
 		assert.Contains(t, wrappedNotInstalled.Error(), ErrNotInstalled.Error())
 		assert.Contains(t, wrappedNotImplemented.Error(), ErrNotImplemented.Error())

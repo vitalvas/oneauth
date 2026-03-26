@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-piv/piv-go/v2/piv"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSlotFromKeyID(t *testing.T) {
@@ -84,6 +85,55 @@ func TestSlotFromKeyID(t *testing.T) {
 			if err == nil {
 				t.Errorf("Expected error, but got none")
 			}
+		})
+	}
+}
+
+func TestMustSlotFromKeyID_Panic(t *testing.T) {
+	t.Run("valid key ID does not panic", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			slot := MustSlotFromKeyID(piv.SlotAuthentication.Key)
+			assert.Equal(t, piv.SlotAuthentication, slot.PIVSlot)
+		})
+	})
+
+	t.Run("invalid key ID panics", func(t *testing.T) {
+		assert.Panics(t, func() {
+			MustSlotFromKeyID(0x10)
+		})
+	})
+
+	t.Run("valid retired slot does not panic", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			slot := MustSlotFromKeyID(0x82)
+			assert.Equal(t, uint32(0x82), slot.PIVSlot.Key)
+		})
+	})
+}
+
+func TestSlot_String(t *testing.T) {
+	tests := []struct {
+		name     string
+		slot     Slot
+		expected string
+	}{
+		{
+			name:     "authentication slot",
+			slot:     Slot{PIVSlot: piv.SlotAuthentication},
+			expected: piv.SlotAuthentication.String(),
+		},
+		{
+			name:     "signature slot",
+			slot:     Slot{PIVSlot: piv.SlotSignature},
+			expected: piv.SlotSignature.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.slot.String()
+			assert.Equal(t, tt.expected, result)
+			assert.NotEmpty(t, result)
 		})
 	}
 }

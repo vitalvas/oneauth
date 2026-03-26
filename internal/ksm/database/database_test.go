@@ -820,6 +820,108 @@ func TestCounterSequenceValidation(t *testing.T) {
 	})
 }
 
+func TestYubikeyKeyStruct(t *testing.T) {
+	now := time.Now()
+	lastUsed := now.Add(-time.Hour)
+
+	t.Run("zero value", func(t *testing.T) {
+		var key YubikeyKey
+		assert.Empty(t, key.KeyID)
+		assert.Empty(t, key.AESKeyEncrypted)
+		assert.Empty(t, key.Description)
+		assert.Equal(t, 0, key.UsageCount)
+		assert.False(t, key.Active)
+		assert.Nil(t, key.LastUsedAt)
+	})
+
+	t.Run("with all fields", func(t *testing.T) {
+		key := YubikeyKey{
+			KeyID:           "testkey12345",
+			AESKeyEncrypted: "encrypted-data",
+			Description:     "Test key",
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			LastUsedAt:      &lastUsed,
+			UsageCount:      42,
+			Active:          true,
+		}
+		assert.Equal(t, "testkey12345", key.KeyID)
+		assert.Equal(t, "encrypted-data", key.AESKeyEncrypted)
+		assert.Equal(t, 42, key.UsageCount)
+		assert.True(t, key.Active)
+		assert.NotNil(t, key.LastUsedAt)
+	})
+}
+
+func TestYubikeyCounterStruct(t *testing.T) {
+	t.Run("zero value", func(t *testing.T) {
+		var counter YubikeyCounter
+		assert.Empty(t, counter.KeyID)
+		assert.Equal(t, 0, counter.Counter)
+		assert.Equal(t, 0, counter.SessionUse)
+		assert.Equal(t, 0, counter.TimestampHigh)
+		assert.Equal(t, 0, counter.TimestampLow)
+	})
+
+	t.Run("with values", func(t *testing.T) {
+		counter := YubikeyCounter{
+			KeyID:         "testkey12345",
+			Counter:       100,
+			SessionUse:    5,
+			TimestampHigh: 1234,
+			TimestampLow:  5678,
+			CreatedAt:     time.Now(),
+		}
+		assert.Equal(t, "testkey12345", counter.KeyID)
+		assert.Equal(t, 100, counter.Counter)
+		assert.Equal(t, 5, counter.SessionUse)
+	})
+}
+
+func TestNewDatabase_EmptyType(t *testing.T) {
+	cfg := &config.DatabaseConfig{
+		Type: "",
+	}
+	db, err := New(cfg)
+	assert.Error(t, err)
+	assert.Nil(t, db)
+	assert.Contains(t, err.Error(), "unsupported database type")
+}
+
+func TestSQLiteDeleteAndReinsert(t *testing.T) {
+	cfg := &config.DatabaseConfig{
+		Type: "sqlite",
+		SQLite: &config.SQLiteConfig{
+			Path:        ":memory:",
+			JournalMode: "WAL",
+			Synchronous: "NORMAL",
+		},
+	}
+
+	db, err := New(cfg)
+	assert.NoError(t, err)
+	defer db.Close()
+
+	key := &YubikeyKey{
+		KeyID:           "reinsertkey1",
+		AESKeyEncrypted: "encrypted-1",
+		Description:     "First version",
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+		Active:          true,
+	}
+
+	// Store, delete, verify gone
+	err = db.StoreKey(key)
+	assert.NoError(t, err)
+
+	err = db.DeleteKey("reinsertkey1")
+	assert.NoError(t, err)
+
+	_, err = db.GetKey("reinsertkey1")
+	assert.Equal(t, fmt.Errorf("sql: no rows in result set").Error(), err.Error())
+}
+
 func TestReplayProtectionLexicographicOrdering(t *testing.T) {
 	cfg := &config.DatabaseConfig{
 		Type: "sqlite",

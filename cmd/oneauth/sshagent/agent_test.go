@@ -166,6 +166,157 @@ func TestSSHAgentAdvanced(t *testing.T) {
 	}
 }
 
+func TestSSHAgentUnsupported(t *testing.T) {
+	testAgent := createTestAgent()
+
+	t.Run("Signers", func(t *testing.T) {
+		signers, err := testAgent.Signers()
+		assert.Error(t, err)
+		assert.Nil(t, signers)
+		assert.Contains(t, err.Error(), "operation unsupported")
+	})
+
+	t.Run("Extension", func(t *testing.T) {
+		result, err := testAgent.Extension("test", []byte("data"))
+		assert.Error(t, err)
+		assert.Nil(t, result)
+	})
+}
+
+func TestSSHAgentShutdown(t *testing.T) {
+	t.Run("ShutdownWithNilYubikey", func(t *testing.T) {
+		agent := createTestAgent()
+		err := agent.Shutdown()
+		assert.NoError(t, err)
+	})
+
+	t.Run("ShutdownWithListener", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "shutdown-test-*")
+		require.NoError(t, err)
+		defer os.RemoveAll(tmpDir)
+
+		socketPath := filepath.Join(tmpDir, "test.sock")
+		ctx, cancel := context.WithCancel(context.Background())
+
+		agent := createTestAgent()
+
+		go func() {
+			agent.ListenAndServe(ctx, socketPath)
+		}()
+
+		require.NoError(t, waitForSocket(socketPath, 200*time.Millisecond))
+
+		// Shutdown should close the listener
+		err = agent.Shutdown()
+		assert.NoError(t, err)
+		cancel()
+	})
+
+	t.Run("ShutdownWithNilSoftKeys", func(t *testing.T) {
+		agent := &SSHAgent{
+			log:      logrus.New().WithField("test", "agent"),
+			softKeys: nil,
+		}
+		err := agent.Close()
+		assert.NoError(t, err)
+	})
+}
+
+func TestSSHAgentListWithNilYubikey(t *testing.T) {
+	testAgent := createTestAgent()
+
+	t.Run("ListReturnsError", func(t *testing.T) {
+		keys, err := testAgent.List()
+		assert.Error(t, err)
+		assert.Nil(t, keys)
+		assert.Contains(t, err.Error(), "no yubikey available")
+	})
+}
+
+func TestSSHAgentSignWithFlags(t *testing.T) {
+	testAgent := createTestAgent()
+
+	t.Run("SignWithNilYubikey", func(t *testing.T) {
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+		pubkey, err := ssh.NewPublicKey(&key.PublicKey)
+		require.NoError(t, err)
+
+		sig, err := testAgent.SignWithFlags(pubkey, []byte("test"), 0)
+		assert.Error(t, err)
+		assert.Nil(t, sig)
+		assert.Contains(t, err.Error(), "no yubikey available")
+	})
+
+	t.Run("SignWithFlagsLocked", func(t *testing.T) {
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+		pubkey, err := ssh.NewPublicKey(&key.PublicKey)
+		require.NoError(t, err)
+
+		err = testAgent.Lock([]byte("pass"))
+		require.NoError(t, err)
+
+		sig, errSign := testAgent.SignWithFlags(pubkey, []byte("test"), 0)
+		assert.Error(t, errSign)
+		assert.Nil(t, sig)
+		assert.Contains(t, errSign.Error(), "agent locked")
+
+		err = testAgent.Unlock([]byte("pass"))
+		require.NoError(t, err)
+	})
+}
+
+func TestSSHAgentListLocked(t *testing.T) {
+	testAgent := createTestAgent()
+
+	t.Run("ListWhenLocked", func(t *testing.T) {
+		err := testAgent.Lock([]byte("password"))
+		require.NoError(t, err)
+
+		keys, err := testAgent.List()
+		assert.Error(t, err)
+		assert.Nil(t, keys)
+		assert.True(t, errors.Is(err, ErrAgentLocked))
+
+		err = testAgent.Unlock([]byte("password"))
+		require.NoError(t, err)
+	})
+}
+
+func TestListenAndServePermanentError(t *testing.T) {
+	t.Run("PermanentError", func(t *testing.T) {
+		agent := createTestAgent()
+		agent.setListener(&permanentErrorListener{})
+
+		err := agent.ListenAndServe(context.Background(), "mock")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to accept")
+	})
+}
+
+func TestListenAndServeNilListener(t *testing.T) {
+	t.Run("NilListenerAfterAccept", func(t *testing.T) {
+		agent := createTestAgent()
+
+		nilListener := &nilAfterAcceptListener{
+			onAccept: func() {
+				agent.setListener(nil)
+			},
+		}
+		agent.setListener(nilListener)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+		defer cancel()
+
+		err := agent.ListenAndServe(ctx, "mock")
+		// Should either return nil (context cancelled) or error (nil listener)
+		if err != nil {
+			assert.Contains(t, err.Error(), "listener is nil")
+		}
+	})
+}
+
 // Helper functions
 func createTestAgent() *SSHAgent {
 	return &SSHAgent{

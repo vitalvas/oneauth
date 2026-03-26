@@ -2,6 +2,8 @@ package yubikey
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGeneratePinCode(t *testing.T) {
@@ -74,4 +76,59 @@ func TestGenerateManagementKey(t *testing.T) {
 	if zero == 24 {
 		t.Errorf("Expected key to be non-zero, but got %v", key)
 	}
+}
+
+func TestGeneratePinCode_ValidPIN(t *testing.T) {
+	t.Run("generates valid PIN", func(t *testing.T) {
+		pin, err := GeneratePinCode()
+		assert.NoError(t, err)
+		assert.Len(t, pin, 6)
+		assert.True(t, ValidatePin(pin), "generated PIN should pass validation")
+	})
+
+	t.Run("uniqueness across multiple calls", func(t *testing.T) {
+		pins := make(map[string]bool)
+		for i := 0; i < 10; i++ {
+			pin, err := GeneratePinCode()
+			assert.NoError(t, err)
+			pins[pin] = true
+		}
+		// With 10 random 6-digit PINs, we should get at least 2 unique values
+		assert.True(t, len(pins) >= 2, "should generate diverse PINs")
+	})
+}
+
+func TestGeneratePukCode_ValidPUK(t *testing.T) {
+	t.Run("generates valid PUK", func(t *testing.T) {
+		puk, err := GeneratePukCode()
+		assert.NoError(t, err)
+		assert.Len(t, puk, 8)
+		assert.True(t, ValidatePuk(puk), "generated PUK should pass validation")
+	})
+
+	t.Run("uniqueness across multiple calls", func(t *testing.T) {
+		puks := make(map[string]bool)
+		for i := 0; i < 10; i++ {
+			puk, err := GeneratePukCode()
+			assert.NoError(t, err)
+			puks[puk] = true
+		}
+		assert.True(t, len(puks) >= 2, "should generate diverse PUKs")
+	})
+}
+
+func TestGenerateManagementKey_Properties(t *testing.T) {
+	t.Run("key length is 24 bytes", func(t *testing.T) {
+		key, err := GenerateManagementKey()
+		assert.NoError(t, err)
+		assert.Len(t, key, 24)
+	})
+
+	t.Run("uniqueness across multiple calls", func(t *testing.T) {
+		key1, err := GenerateManagementKey()
+		assert.NoError(t, err)
+		key2, err := GenerateManagementKey()
+		assert.NoError(t, err)
+		assert.NotEqual(t, key1, key2, "two keys should not be identical")
+	})
 }

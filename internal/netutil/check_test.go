@@ -231,3 +231,50 @@ func TestUnixSocketCreds_InvalidConnection(t *testing.T) {
 		assert.Equal(t, -1, creds.PID)
 	}
 }
+
+func TestCheckCreds_RootUID(t *testing.T) {
+	// Root (UID 0) is always allowed because of the creds.UID > 0 check
+	creds := &UnixCreds{UID: 0, PID: 1}
+	err := CheckCreds(creds)
+	assert.NoError(t, err)
+}
+
+func TestCheckCreds_WithUnixSocketCreds(t *testing.T) {
+	// Integration: get creds from TCP (returns -1) and check them
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer listener.Close()
+
+	conn, err := net.Dial("tcp", listener.Addr().String())
+	require.NoError(t, err)
+	defer conn.Close()
+
+	serverConn, err := listener.Accept()
+	require.NoError(t, err)
+	defer serverConn.Close()
+
+	creds, err := UnixSocketCreds(serverConn)
+	assert.NoError(t, err)
+
+	// CheckCreds with UID -1 should pass (UID <= 0)
+	err = CheckCreds(&creds)
+	assert.NoError(t, err)
+}
+
+func TestUnixCreds_ZeroValues(t *testing.T) {
+	var creds UnixCreds
+	assert.Equal(t, 0, creds.PID)
+	assert.Equal(t, 0, creds.UID)
+}
+
+func TestCheckCreds_LargeUID(t *testing.T) {
+	currentUID := os.Getuid()
+	if currentUID == 65534 {
+		t.Skip("current user has UID 65534, cannot test with different large UID")
+	}
+
+	creds := &UnixCreds{UID: 65534, PID: 1}
+	err := CheckCreds(creds)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "connection from another user")
+}

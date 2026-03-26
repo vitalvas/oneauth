@@ -10,7 +10,6 @@ import (
 	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/cmd/oneauth/config"
-	"github.com/vitalvas/oneauth/internal/certgen"
 	"github.com/vitalvas/oneauth/internal/keyring"
 	"github.com/vitalvas/oneauth/internal/tools"
 	"github.com/vitalvas/oneauth/internal/yubikey"
@@ -136,11 +135,11 @@ var setupNewCmd = &cli.Command{
 			return err
 		}
 
-		if err := keyring.Set(keyring.GetYubikeyAccount(serial, "pin"), newPIN); err != nil {
+		if err := keyring.Set(fmt.Sprintf("yubikey:%d:%s", serial, "pin"), newPIN); err != nil {
 			return err
 		}
 
-		if err := keyring.Set(keyring.GetYubikeyAccount(serial, "puk"), newPUK); err != nil {
+		if err := keyring.Set(fmt.Sprintf("yubikey:%d:%s", serial, "puk"), newPUK); err != nil {
 			return err
 		}
 
@@ -168,7 +167,7 @@ var setupNewCmd = &cli.Command{
 
 			if rsaBits := c.Uint64("rsa-bits"); rsaBits != 0 {
 				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyRSAID), newPIN, yubikey.CertRequest{
-					CommonName: certgen.GenCommonName(username, "insecure-rsa"),
+					CommonName: fmt.Sprintf("%s@%s", username, "insecure-rsa"),
 					Days:       int(validDays),
 					Key: piv.Key{
 						Algorithm:   piv.AlgorithmRSA2048,
@@ -193,7 +192,7 @@ var setupNewCmd = &cli.Command{
 				}
 
 				key.GenCertificate(yubikey.MustSlotFromKeyID(yubikey.SlotKeyECDSAID), newPIN, yubikey.CertRequest{
-					CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
+					CommonName: fmt.Sprintf("%s@%s", username, "insecure-ecdsa"),
 					Days:       int(validDays),
 					Key: piv.Key{
 						Algorithm:   eccAlgo,

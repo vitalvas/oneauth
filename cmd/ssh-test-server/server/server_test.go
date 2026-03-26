@@ -16,9 +16,90 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/mock"
 	"golang.org/x/crypto/ssh"
 )
+
+func TestLoadConfig(t *testing.T) {
+	t.Run("ValidURL", func(t *testing.T) {
+		srv := &Server{}
+		app := &cli.App{
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "server-url",
+					Value: "http://127.0.0.1:9090",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				return srv.loadConfig(c)
+			},
+		}
+
+		err := app.Run([]string{"app"})
+		require.NoError(t, err)
+		assert.NotNil(t, srv.serverURL)
+		assert.Equal(t, "http", srv.serverURL.Scheme)
+		assert.Equal(t, "127.0.0.1:9090", srv.serverURL.Host)
+	})
+
+	t.Run("HTTPSScheme", func(t *testing.T) {
+		srv := &Server{}
+		app := &cli.App{
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "server-url",
+					Value: "https://example.com:8443",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				return srv.loadConfig(c)
+			},
+		}
+
+		err := app.Run([]string{"app"})
+		require.NoError(t, err)
+		assert.NotNil(t, srv.serverURL)
+		assert.Equal(t, "https", srv.serverURL.Scheme)
+	})
+
+	t.Run("DefaultURL", func(t *testing.T) {
+		srv := &Server{}
+		app := &cli.App{
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "server-url",
+					Value: "http://127.0.0.1:8080",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				return srv.loadConfig(c)
+			},
+		}
+
+		err := app.Run([]string{"app"})
+		require.NoError(t, err)
+		assert.NotNil(t, srv.serverURL)
+		assert.Equal(t, "127.0.0.1:8080", srv.serverURL.Host)
+	})
+}
+
+func TestServerStruct(t *testing.T) {
+	t.Run("ZeroValue", func(t *testing.T) {
+		srv := &Server{}
+		assert.Nil(t, srv.serverURL)
+		assert.Nil(t, srv.sshConfig)
+	})
+
+	t.Run("WithURL", func(t *testing.T) {
+		parsedURL, err := url.Parse("http://localhost:8080")
+		require.NoError(t, err)
+
+		srv := &Server{serverURL: parsedURL}
+		assert.NotNil(t, srv.serverURL)
+		assert.Equal(t, "localhost:8080", srv.serverURL.Host)
+	})
+}
 
 // Test core server functionality
 func TestServer(t *testing.T) {

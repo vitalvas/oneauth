@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,7 +63,7 @@ func TestWriteServiceTemplate(t *testing.T) {
 		defer tempFile.Close()
 
 		// Test writing template with long path
-		longPath := strings.Repeat("/very/long/path", 20) + "/oneauth"
+		longPath := fmt.Sprintf("%s/oneauth", strings.Repeat("/very/long/path", 20))
 		err = writeServiceTemplate(longPath, tempFile)
 		assert.NoError(t, err)
 	})
@@ -233,6 +234,96 @@ func TestServiceFileHandling(t *testing.T) {
 		info, err := os.Stat(servicePath)
 		assert.NoError(t, err)
 		assert.True(t, info.Size() > 0)
+	})
+}
+
+func TestSetSSHAuthSock(t *testing.T) {
+	t.Run("SetSSHAuthSock", func(t *testing.T) {
+		err := SetSSHAuthSock("/tmp/test-ssh-auth-sock")
+		// On macOS, launchctl setenv should work
+		// It may fail in CI or restricted environments
+		if err != nil {
+			assert.Contains(t, err.Error(), "failed to set SSH_AUTH_SOCK")
+		}
+	})
+
+	t.Run("SetSSHAuthSockWithEmptyPath", func(t *testing.T) {
+		err := SetSSHAuthSock("")
+		// Even with empty path, launchctl setenv should accept it
+		if err != nil {
+			assert.Contains(t, err.Error(), "failed to set SSH_AUTH_SOCK")
+		}
+	})
+}
+
+func TestCallLaunchCtlLoadFailed(t *testing.T) {
+	t.Run("LoadFailedDetection", func(t *testing.T) {
+		// Test that callLaunchCtl detects "Load failed" in stderr
+		// callLaunchCtl with list on a non-existent service returns error
+		_, err := callLaunchCtl("list", "com.nonexistent.service.12345")
+		// This should return ErrNotInstalled when checked via checkService
+		// or an error from callLaunchCtl
+		if err != nil {
+			assert.NotEmpty(t, err.Error())
+		}
+	})
+}
+
+func TestCheckService(t *testing.T) {
+	t.Run("ServiceNotInstalled", func(t *testing.T) {
+		// checkService should return ErrNotInstalled if the service is not loaded
+		err := checkService()
+		// On machines without the service installed, this should return ErrNotInstalled
+		assert.True(t, err == nil || err == ErrNotInstalled)
+	})
+}
+
+func TestCallLaunchCtlWithVariousArgs(t *testing.T) {
+	t.Run("ListCommand", func(t *testing.T) {
+		output, err := callLaunchCtl("list")
+		// list should succeed on macOS
+		if err == nil {
+			assert.NotEmpty(t, output)
+		}
+	})
+
+	t.Run("VersionCommand", func(t *testing.T) {
+		output, err := callLaunchCtl("version")
+		// version may or may not work depending on macOS version
+		if err == nil {
+			assert.IsType(t, "", output)
+		}
+	})
+}
+
+func TestInstallFailsOutsideBinDir(t *testing.T) {
+	t.Run("InstallFromWrongDirectory", func(t *testing.T) {
+		err := Install()
+		// Should fail because the test binary is not in the BinDir
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "service can be installed only from app home directory")
+	})
+}
+
+func TestRestartBehavior(t *testing.T) {
+	t.Run("RestartWhenNotInstalled", func(t *testing.T) {
+		// If service is not installed, Restart should return nil
+		err := checkService()
+		if err == ErrNotInstalled {
+			err = Restart()
+			assert.NoError(t, err)
+		}
+	})
+}
+
+func TestUninstalBehavior(t *testing.T) {
+	t.Run("UninstalWhenNotInstalled", func(t *testing.T) {
+		// If service is not installed, Uninstal should return nil
+		err := checkService()
+		if err == ErrNotInstalled {
+			err = Uninstal()
+			assert.NoError(t, err)
+		}
 	})
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/vitalvas/oneauth/internal/agentkey"
-	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -29,7 +28,7 @@ func (a *SSHAgent) Remove(reqKey ssh.PublicKey) error {
 		return ErrAgentLocked
 	}
 
-	fp := tools.SSHFingerprint(reqKey)
+	fp := ssh.FingerprintSHA256(reqKey)
 	a.softKeys.Remove(fp)
 
 	return fmt.Errorf("Remove: %w", ErrOperationUnsupported)

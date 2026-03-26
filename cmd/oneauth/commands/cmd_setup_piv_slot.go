@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/urfave/cli/v2"
-	"github.com/vitalvas/oneauth/internal/certgen"
 	"github.com/vitalvas/oneauth/internal/keyring"
 	"github.com/vitalvas/oneauth/internal/yubikey"
 )
@@ -136,7 +135,7 @@ var setupPivSlotCmd = &cli.Command{
 			pinPolicy = policy
 		}
 
-		yubikeyPIN, err := keyring.Get(keyring.GetYubikeyAccount(serial, "pin"))
+		yubikeyPIN, err := keyring.Get(fmt.Sprintf("yubikey:%d:%s", serial, "pin"))
 		if err != nil {
 			return fmt.Errorf("failed to get YubiKey PIN: %w", err)
 		}
@@ -144,7 +143,7 @@ var setupPivSlotCmd = &cli.Command{
 		switch c.String("key-type") {
 		case "rsa2048":
 			key.GenCertificate(pivSlot, yubikeyPIN, yubikey.CertRequest{
-				CommonName: certgen.GenCommonName(username, "insecure-rsa"),
+				CommonName: fmt.Sprintf("%s@%s", username, "insecure-rsa"),
 				Days:       int(validDays),
 				Key: piv.Key{
 					Algorithm:   piv.AlgorithmRSA2048,
@@ -162,7 +161,7 @@ var setupPivSlotCmd = &cli.Command{
 			}
 
 			key.GenCertificate(pivSlot, yubikeyPIN, yubikey.CertRequest{
-				CommonName: certgen.GenCommonName(username, "insecure-ecdsa"),
+				CommonName: fmt.Sprintf("%s@%s", username, "insecure-ecdsa"),
 				Days:       int(validDays),
 				Key: piv.Key{
 					Algorithm:   eccAlgo,

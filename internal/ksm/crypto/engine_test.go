@@ -1,11 +1,14 @@
 package crypto
 
 import (
+	"crypto/aes"
 	"encoding/base64"
+	"encoding/binary"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vitalvas/oneauth/internal/ykshared"
 )
 
 func TestNewEngine(t *testing.T) {
@@ -428,6 +431,112 @@ func TestEngine_ConcurrentAccess(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, aesKey, decrypted)
 	}
+}
+
+func TestDecryptYubikeyOTP(t *testing.T) {
+	engine, err := NewEngine("test-master-key-1234567890")
+	assert.NoError(t, err)
+
+	aesKey := []byte("1234567890123456")
+
+	t.Run("invalid modhex characters", func(t *testing.T) {
+		_, err := engine.DecryptYubikeyOTP("ccccccccccccdefghijklnrtuvcbdefghijklnrtuXXX", aesKey)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to convert modhex to hex")
+	})
+
+	t.Run("empty OTP", func(t *testing.T) {
+		_, err := engine.DecryptYubikeyOTP("", aesKey)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to convert modhex to hex")
+	})
+
+	t.Run("wrong length after modhex conversion - too short", func(t *testing.T) {
+		_, err := engine.DecryptYubikeyOTP("cccccccccccc", aesKey)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid OTP length after modhex conversion")
+	})
+
+	t.Run("wrong length after modhex conversion - too long", func(t *testing.T) {
+		otp := strings.Repeat("c", 46)
+		_, err := engine.DecryptYubikeyOTP(otp, aesKey)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid OTP length after modhex conversion")
+	})
+
+	t.Run("invalid AES key size", func(t *testing.T) {
+		validOTP := "cccccccccccccccccccccccccccccccccccccccccccc"
+		_, err := engine.DecryptYubikeyOTP(validOTP, []byte("short"))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create AES cipher")
+	})
+
+	t.Run("CRC verification failure", func(t *testing.T) {
+		// 44-char valid modhex OTP with valid AES key decrypts but CRC will not match
+		validOTP := "ccccccccccccdefghijklnrtuvcbdefghijklnrtuvic"
+		_, err := engine.DecryptYubikeyOTP(validOTP, aesKey)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "CRC verification failed")
+	})
+
+	t.Run("successful decryption with valid CRC", func(t *testing.T) {
+		// Build a valid OTP by encrypting known plaintext with proper CRC
+		plaintext := make([]byte, 16)
+		// Private ID (6 bytes)
+		plaintext[0] = 0x01
+		plaintext[1] = 0x02
+		plaintext[2] = 0x03
+		plaintext[3] = 0x04
+		plaintext[4] = 0x05
+		plaintext[5] = 0x06
+		// Counter (2 bytes LE) at offset 8-9
+		binary.LittleEndian.PutUint16(plaintext[8:10], 42)
+		// Timestamp low (2 bytes LE) at offset 10-11
+		binary.LittleEndian.PutUint16(plaintext[10:12], 0x1234)
+		// Timestamp high (1 byte) at offset 12
+		plaintext[12] = 0x56
+		// Session use (1 byte) at offset 13
+		plaintext[13] = 7
+
+		// Calculate CRC over first 14 bytes and place at offset 14-15
+		crc := ykshared.CalculateCRC16(plaintext[:14])
+		binary.LittleEndian.PutUint16(plaintext[14:16], crc)
+
+		// Encrypt with AES-128 ECB
+		block, cipherErr := aes.NewCipher(aesKey)
+		assert.NoError(t, cipherErr)
+		encrypted := make([]byte, 16)
+		block.Encrypt(encrypted, plaintext)
+
+		// Key ID bytes (6 bytes) + encrypted (16 bytes) = 22 bytes
+		otpBytes := make([]byte, 0, 22)
+		otpBytes = append(otpBytes, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
+		otpBytes = append(otpBytes, encrypted...)
+
+		// Convert to modhex
+		otpModhex := ykshared.BytesToModhex(otpBytes)
+		assert.Equal(t, 44, len(otpModhex))
+
+		result, err := engine.DecryptYubikeyOTP(otpModhex, aesKey)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 42, result.Counter)
+		assert.Equal(t, 0x1234, result.TimestampLow)
+		assert.Equal(t, 0x56, result.TimestampHigh)
+		assert.Equal(t, 7, result.SessionUse)
+	})
+
+	t.Run("various modhex patterns with CRC failure", func(t *testing.T) {
+		patterns := []string{
+			"cbdefghijklnrtuvcbdefghijklnrtuvcbdefghijkl",
+			"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+			"dddddddddddddefghijklnrtuvcbdefghijklnrtuvic",
+		}
+		for _, otp := range patterns {
+			_, err := engine.DecryptYubikeyOTP(otp, aesKey)
+			assert.Error(t, err)
+		}
+	})
 }
 
 func BenchmarkNewEngine(b *testing.B) {

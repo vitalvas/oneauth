@@ -1,7 +1,10 @@
 package updates
 
 import (
+	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -134,6 +137,172 @@ func TestGetRemoteManifest_ErrorHandling(t *testing.T) {
 	// Test with invalid URL
 	manifest, err := getRemoteManifest("test-app", "invalid-url")
 
+	assert.Error(t, err)
+	assert.Nil(t, manifest)
+}
+
+func TestCheck_WithMockServer(t *testing.T) {
+	tests := []struct {
+		name           string
+		appName        string
+		localVersion   string
+		serverResponse *UpdateManifest
+		serverStatus   int
+		expectError    bool
+		expectManifest bool
+	}{
+		{
+			name:         "update available",
+			appName:      "testapp",
+			localVersion: "v1.0.0",
+			serverResponse: &UpdateManifest{
+				Name:         "testapp",
+				Version:      "v2.0.0",
+				RemotePrefix: "https://example.com/releases/",
+			},
+			serverStatus:   http.StatusOK,
+			expectError:    false,
+			expectManifest: true,
+		},
+		{
+			name:         "no update available same version",
+			appName:      "testapp",
+			localVersion: "v2.0.0",
+			serverResponse: &UpdateManifest{
+				Name:         "testapp",
+				Version:      "v2.0.0",
+				RemotePrefix: "https://example.com/releases/",
+			},
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectManifest: false,
+		},
+		{
+			name:         "remote version older than local",
+			appName:      "testapp",
+			localVersion: "v3.0.0",
+			serverResponse: &UpdateManifest{
+				Name:         "testapp",
+				Version:      "v2.0.0",
+				RemotePrefix: "https://example.com/releases/",
+			},
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectManifest: false,
+		},
+		{
+			name:         "server returns invalid manifest version",
+			appName:      "testapp",
+			localVersion: "v1.0.0",
+			serverResponse: &UpdateManifest{
+				Name:         "testapp",
+				Version:      "not-a-version",
+				RemotePrefix: "https://example.com/releases/",
+			},
+			serverStatus:   http.StatusOK,
+			expectError:    true,
+			expectManifest: false,
+		},
+		{
+			name:         "server returns 404",
+			appName:      "testapp",
+			localVersion: "v1.0.0",
+			serverStatus: http.StatusNotFound,
+			expectError:  true,
+		},
+		{
+			name:         "server returns 403",
+			appName:      "testapp",
+			localVersion: "v1.0.0",
+			serverStatus: http.StatusForbidden,
+			expectError:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tt.serverStatus != http.StatusOK {
+					w.WriteHeader(tt.serverStatus)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(tt.serverResponse)
+			}))
+			defer server.Close()
+
+			// Override the getJSON function by using the mock server URL directly
+			// We need to test through getRemoteManifest since Check calls real URLs
+			manifest, err := getRemoteManifest(tt.appName, server.URL)
+
+			if tt.serverStatus != http.StatusOK {
+				assert.Error(t, err)
+				assert.Nil(t, manifest)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, manifest)
+			assert.Equal(t, tt.serverResponse.Name, manifest.Name)
+			assert.Equal(t, tt.serverResponse.Version, manifest.Version)
+			assert.Equal(t, tt.serverResponse.RemotePrefix, manifest.RemotePrefix)
+		})
+	}
+}
+
+func TestGetRemoteManifest_Success(t *testing.T) {
+	expected := &UpdateManifest{
+		Name:         "testapp",
+		Version:      "v1.2.3",
+		RemotePrefix: "https://example.com/releases/",
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(expected)
+	}))
+	defer server.Close()
+
+	manifest, err := getRemoteManifest("testapp", server.URL)
+	assert.NoError(t, err)
+	assert.NotNil(t, manifest)
+	assert.Equal(t, expected.Name, manifest.Name)
+	assert.Equal(t, expected.Version, manifest.Version)
+	assert.Equal(t, expected.RemotePrefix, manifest.RemotePrefix)
+}
+
+func TestGetRemoteManifest_ServerErrors(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+	}{
+		{"not found", http.StatusNotFound},
+		{"forbidden", http.StatusForbidden},
+		{"server error", http.StatusInternalServerError},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(tt.statusCode)
+			}))
+			defer server.Close()
+
+			manifest, err := getRemoteManifest("testapp", server.URL)
+			assert.Error(t, err)
+			assert.Nil(t, manifest)
+		})
+	}
+}
+
+func TestGetRemoteManifest_InvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte("not valid json"))
+	}))
+	defer server.Close()
+
+	manifest, err := getRemoteManifest("testapp", server.URL)
 	assert.Error(t, err)
 	assert.Nil(t, manifest)
 }

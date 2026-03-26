@@ -153,6 +153,94 @@ func TestExecuteCliIntegration(t *testing.T) {
 	})
 }
 
+func TestCommandMetadata(t *testing.T) {
+	t.Run("ServiceCmd", func(t *testing.T) {
+		assert.Equal(t, "service", serviceCmd.Name)
+		assert.Equal(t, "Service management", serviceCmd.Usage)
+		assert.NotEmpty(t, serviceCmd.Subcommands)
+		assert.Len(t, serviceCmd.Subcommands, 3)
+
+		subNames := make([]string, 0, len(serviceCmd.Subcommands))
+		for _, sub := range serviceCmd.Subcommands {
+			subNames = append(subNames, sub.Name)
+		}
+		assert.Contains(t, subNames, "enable")
+		assert.Contains(t, subNames, "disable")
+		assert.Contains(t, subNames, "restart")
+	})
+
+	t.Run("InfoCmd", func(t *testing.T) {
+		assert.Equal(t, "info", infoCmd.Name)
+		assert.Equal(t, "Prints detailed information", infoCmd.Usage)
+		assert.NotNil(t, infoCmd.Action)
+	})
+
+	t.Run("UpdateCmd", func(t *testing.T) {
+		assert.Equal(t, "update", updateCmd.Name)
+		assert.Equal(t, "update oneauth", updateCmd.Usage)
+		assert.NotNil(t, updateCmd.Action)
+	})
+
+	t.Run("SetupCmd", func(t *testing.T) {
+		assert.Equal(t, "setup", setupCmd.Name)
+		assert.Equal(t, "Setup a YubiKey", setupCmd.Usage)
+		assert.NotEmpty(t, setupCmd.Subcommands)
+	})
+
+	t.Run("YubikeyCmd", func(t *testing.T) {
+		assert.Equal(t, "yubikey", yubikeyCmd.Name)
+		assert.NotNil(t, yubikeyCmd)
+	})
+
+	t.Run("ServiceSubcommands", func(t *testing.T) {
+		assert.Equal(t, "enable", serviceEnableCmd.Name)
+		assert.Equal(t, "Enable the service", serviceEnableCmd.Usage)
+		assert.NotNil(t, serviceEnableCmd.Action)
+
+		assert.Equal(t, "disable", serviceDisableCmd.Name)
+		assert.Equal(t, "Disable the service", serviceDisableCmd.Usage)
+		assert.NotNil(t, serviceDisableCmd.Action)
+
+		assert.Equal(t, "restart", serviceRestartCmd.Name)
+		assert.Equal(t, "Restart the service", serviceRestartCmd.Usage)
+		assert.NotNil(t, serviceRestartCmd.Action)
+	})
+}
+
+func TestInfoKeyStruct(t *testing.T) {
+	t.Run("InfoKeyFields", func(t *testing.T) {
+		key := InfoKey{
+			Name:    "test-key",
+			Serial:  "12345",
+			Version: "1.0.0",
+		}
+
+		assert.Equal(t, "test-key", key.Name)
+		assert.Equal(t, "12345", key.Serial)
+		assert.Equal(t, "1.0.0", key.Version)
+	})
+
+	t.Run("InfoDataStructure", func(t *testing.T) {
+		data := infoData{
+			Keys: []InfoKey{
+				{Name: "key1", Serial: "1", Version: "1.0"},
+				{Name: "key2", Serial: "2", Version: "2.0"},
+			},
+		}
+
+		assert.Len(t, data.Keys, 2)
+		assert.Equal(t, "key1", data.Keys[0].Name)
+		assert.Equal(t, "key2", data.Keys[1].Name)
+	})
+}
+
+func TestInfoTemplate(t *testing.T) {
+	t.Run("TemplateValid", func(t *testing.T) {
+		assert.NotEmpty(t, infoTmpl)
+		assert.Contains(t, infoTmpl, "Keys")
+	})
+}
+
 func TestExecuteConstants(t *testing.T) {
 	t.Run("StringConstants", func(t *testing.T) {
 		// Test that string constants are not empty

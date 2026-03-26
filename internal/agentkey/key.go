@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vitalvas/oneauth/internal/tools"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -25,7 +24,7 @@ func NewKey(key agent.AddedKey) (*Key, error) {
 	}
 
 	pubKey := signer.PublicKey()
-	fingerprint := tools.SSHFingerprint(pubKey)
+	fingerprint := ssh.FingerprintSHA256(pubKey)
 
 	var keyName string
 	if key.Comment != "" {

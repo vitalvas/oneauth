@@ -36,12 +36,12 @@ func (e *Engine) DecryptYubikeyOTP(otp string, aesKey []byte) (*OTPData, error) 
 		return nil, fmt.Errorf("failed to convert hex to bytes: %w", err)
 	}
 
-	// Extract encrypted part (skip key ID, take last 32 hex chars = 16 bytes)
-	if len(otpBytes) != 32 {
+	// Extract encrypted part (skip 6-byte key ID, take last 16 bytes)
+	if len(otpBytes) != 22 {
 		return nil, fmt.Errorf("invalid OTP byte length")
 	}
 
-	encryptedPart := otpBytes[16:] // Skip first 16 bytes (key ID part)
+	encryptedPart := otpBytes[6:] // Skip first 6 bytes (key ID)
 
 	// Decrypt using AES-128 ECB mode
 	block, err := aes.NewCipher(aesKey)
