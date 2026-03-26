@@ -1,6 +1,6 @@
-mkdocs
+mkdocs>=1.6.0
 mkdocs-plugin-tags
-mkdocs-material
+mkdocs-material>=9.0.0
 mkdocs-material-extensions
 mkdocs-git-revision-date-localized-plugin
 mkdocs-minify-plugin>=0.8.0
