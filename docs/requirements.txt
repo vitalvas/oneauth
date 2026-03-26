@@ -3,5 +3,5 @@ mkdocs-plugin-tags
 mkdocs-material
 mkdocs-material-extensions
 mkdocs-git-revision-date-localized-plugin
-mkdocs-minify-plugin
+mkdocs-minify-plugin>=0.8.0
 pymarkdownlnt
