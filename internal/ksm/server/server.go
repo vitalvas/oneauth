@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/vitalvas/kasper/mux"
 	"github.com/vitalvas/oneauth/internal/ksm/config"
 	"github.com/vitalvas/oneauth/internal/ksm/crypto"
 	"github.com/vitalvas/oneauth/internal/ksm/database"

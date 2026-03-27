@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/vitalvas/kasper/mux"
 )
 
 func (s *Server) handleRESTDecrypt(w http.ResponseWriter, r *http.Request) {

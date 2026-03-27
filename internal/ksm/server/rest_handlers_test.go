@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/vitalvas/kasper/mux"
 	"github.com/vitalvas/oneauth/internal/yksoft"
 )
 

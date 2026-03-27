@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/urfave/cli/v2"
+	"github.com/vitalvas/kasper/mux"
 	"github.com/vitalvas/oneauth/internal/yubico"
 )
 

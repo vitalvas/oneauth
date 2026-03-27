@@ -6,13 +6,13 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/go-piv/piv-go/v2 v2.5.0
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vitalvas/gokit v0.28.0
+	github.com/vitalvas/kasper v0.10.0
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/crypto v0.48.0
 	golang.org/x/mod v0.33.0
