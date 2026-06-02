@@ -11,16 +11,16 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
-	github.com/vitalvas/gokit v0.34.0
-	github.com/vitalvas/kasper v0.12.0
+	github.com/vitalvas/gokit v0.35.0
+	github.com/vitalvas/kasper v0.20.0
 	github.com/zalando/go-keyring v0.2.8
-	golang.org/x/crypto v0.50.0
-	golang.org/x/mod v0.35.0
+	golang.org/x/crypto v0.52.0
+	golang.org/x/mod v0.36.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.43.0
-	golang.org/x/term v0.42.0
+	golang.org/x/sys v0.45.0
+	golang.org/x/term v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.50.0
+	modernc.org/sqlite v1.51.0
 )
 
 require (
@@ -42,8 +42,8 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
-	golang.org/x/text v0.36.0 // indirect
-	modernc.org/libc v1.72.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	modernc.org/libc v1.72.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
