@@ -64,6 +64,7 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/urfave/cli/v2 v2.27.7 h1:bH59vdhbjLv3LAvIu6gd0usJHgoTTPhCFib8qqOwXYU=
 github.com/urfave/cli/v2 v2.27.7/go.mod h1:CyNAG/xg+iAOg0N4MPGZqVmv2rCoP267496AOXUZjA4=
+github.com/urfave/cli/v3 v3.10.0/go.mod h1:ysVLtOEmg2tOy6PknnYVhDoouyC/6N42TMeoMzskhso=
 github.com/vitalvas/gokit v0.35.0 h1:M7BKkKpoP6rYPm+IAYO549cx5ZeM7DEvq0gNimxqwFQ=
 github.com/vitalvas/gokit v0.35.0/go.mod h1:eiFw2yqgbrDMymUMwP4spDXBooeMwxh87dX49LrGFbs=
 github.com/vitalvas/kasper v0.20.0 h1:CWFFc2CGnZlqzCwsQhcAtLS1wtSRQv2tM88IMVeY5RI=
