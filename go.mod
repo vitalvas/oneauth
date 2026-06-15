@@ -15,7 +15,7 @@ require (
 	github.com/vitalvas/kasper v0.22.1
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/crypto v0.53.0
-	golang.org/x/mod v0.36.0
+	golang.org/x/mod v0.37.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/sys v0.46.0
 	golang.org/x/term v0.44.0
