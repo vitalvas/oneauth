@@ -68,6 +68,8 @@ github.com/vitalvas/gokit v0.35.0 h1:M7BKkKpoP6rYPm+IAYO549cx5ZeM7DEvq0gNimxqwFQ
 github.com/vitalvas/gokit v0.35.0/go.mod h1:eiFw2yqgbrDMymUMwP4spDXBooeMwxh87dX49LrGFbs=
 github.com/vitalvas/kasper v0.20.0 h1:CWFFc2CGnZlqzCwsQhcAtLS1wtSRQv2tM88IMVeY5RI=
 github.com/vitalvas/kasper v0.20.0/go.mod h1:M6JZ3k42LdwNNs4+U3PZsLuUET81bjBEIzwtx9F36A8=
+github.com/vitalvas/kasper v0.22.1 h1:jT5GuTrMWNk9qUEhyF8ngJrS0KIFOJMqX74wVFZ3TiA=
+github.com/vitalvas/kasper v0.22.1/go.mod h1:M6JZ3k42LdwNNs4+U3PZsLuUET81bjBEIzwtx9F36A8=
 github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 h1:FnBeRrxr7OU4VvAzt5X7s6266i6cSVkkFPS0TuXWbIg=
 github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 github.com/zalando/go-keyring v0.2.8 h1:6sD/Ucpl7jNq10rM2pgqTs0sZ9V3qMrqfIIy5YPccHs=

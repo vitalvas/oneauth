@@ -12,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vitalvas/gokit v0.35.0
-	github.com/vitalvas/kasper v0.20.0
+	github.com/vitalvas/kasper v0.22.1
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/crypto v0.52.0
 	golang.org/x/mod v0.36.0
