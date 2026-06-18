@@ -67,6 +67,8 @@ github.com/urfave/cli/v2 v2.27.7/go.mod h1:CyNAG/xg+iAOg0N4MPGZqVmv2rCoP267496AO
 github.com/urfave/cli/v3 v3.10.0/go.mod h1:ysVLtOEmg2tOy6PknnYVhDoouyC/6N42TMeoMzskhso=
 github.com/vitalvas/gokit v0.35.0 h1:M7BKkKpoP6rYPm+IAYO549cx5ZeM7DEvq0gNimxqwFQ=
 github.com/vitalvas/gokit v0.35.0/go.mod h1:eiFw2yqgbrDMymUMwP4spDXBooeMwxh87dX49LrGFbs=
+github.com/vitalvas/gokit v0.36.0 h1:pWY+C6PhvrMBHQGzVebXAPZLnNRinXhqqhl5+G2FCho=
+github.com/vitalvas/gokit v0.36.0/go.mod h1:2HOotTf7cUFzkd4FY2MP4VF8hN5IAI4ngN3h/6pLO5o=
 github.com/vitalvas/kasper v0.20.0 h1:CWFFc2CGnZlqzCwsQhcAtLS1wtSRQv2tM88IMVeY5RI=
 github.com/vitalvas/kasper v0.20.0/go.mod h1:M6JZ3k42LdwNNs4+U3PZsLuUET81bjBEIzwtx9F36A8=
 github.com/vitalvas/kasper v0.22.1 h1:jT5GuTrMWNk9qUEhyF8ngJrS0KIFOJMqX74wVFZ3TiA=
