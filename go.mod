@@ -9,7 +9,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/sirupsen/logrus v1.10.0
 	github.com/spf13/cobra v1.10.2
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/urfave/cli/v3 v3.11.0
 	github.com/vitalvas/gokit v0.36.2
@@ -43,6 +43,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	modernc.org/libc v1.74.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
