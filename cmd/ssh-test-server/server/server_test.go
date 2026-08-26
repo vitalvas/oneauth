@@ -393,6 +393,75 @@ func TestUtilities(t *testing.T) {
 	})
 }
 
+func TestSetupSSHConfig(t *testing.T) {
+	srv := &Server{}
+	err := srv.setupSSHConfig()
+	require.NoError(t, err)
+
+	require.NotNil(t, srv.sshConfig)
+	assert.Equal(t, "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)", srv.sshConfig.ServerVersion)
+	assert.NotNil(t, srv.sshConfig.PasswordCallback)
+	assert.NotNil(t, srv.sshConfig.PublicKeyCallback)
+	assert.NotNil(t, srv.sshConfig.BannerCallback)
+
+	t.Run("BannerCallbackRendersWelcome", func(t *testing.T) {
+		conn := &mockConnMetadata{
+			user:       "alice",
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("10.0.0.1"), Port: 4242},
+		}
+		assert.Equal(t, "Welcome alice from 10.0.0.1!\n", srv.sshConfig.BannerCallback(conn))
+	})
+}
+
+func TestListenAndServe(t *testing.T) {
+	t.Run("InvalidAddress", func(t *testing.T) {
+		srv := &Server{listenAddr: "127.0.0.1:-1"}
+		err := srv.ListenAndServe()
+		assert.Error(t, err)
+	})
+
+	t.Run("ServesUntilListenerClosed", func(t *testing.T) {
+		srv := &Server{listenAddr: "127.0.0.1:0"}
+		require.NoError(t, srv.setupSSHConfig())
+
+		listener, err := net.Listen("tcp", srv.listenAddr)
+		require.NoError(t, err)
+
+		done := make(chan error, 1)
+		go func() {
+			done <- srv.serve(listener)
+		}()
+
+		// Establish a connection so handleConn runs, then close it.
+		client, err := net.Dial("tcp", listener.Addr().String())
+		require.NoError(t, err)
+		client.Close()
+
+		time.Sleep(10 * time.Millisecond)
+
+		// Closing the listener makes Accept fail and serve return.
+		require.NoError(t, listener.Close())
+
+		select {
+		case err := <-done:
+			assert.Error(t, err)
+		case <-time.After(time.Second):
+			t.Fatal("serve did not return after listener closed")
+		}
+	})
+}
+
+func TestRunServer(t *testing.T) {
+	t.Run("InvalidListenAddress", func(t *testing.T) {
+		srv := &Server{listenAddr: "127.0.0.1:-1"}
+		action := srv.runServer(srv)
+
+		app := &cli.App{Action: action}
+		err := app.Run([]string{"app"})
+		assert.Error(t, err)
+	})
+}
+
 // Mock implementations for testing
 type mockConnMetadata struct {
 	user       string

@@ -394,32 +394,16 @@ func TestSoftwareYubikey(t *testing.T) {
 		yk, err := NewSoftwareYubikey(config)
 		assert.NoError(t, err)
 
-		t.Run("GetKeyID", func(t *testing.T) {
-			assert.Equal(t, keyID, yk.GetKeyID())
+		t.Run("KeyID", func(t *testing.T) {
+			assert.Equal(t, keyID, yk.KeyID)
 		})
 
-		t.Run("GetAESKey returns copy", func(t *testing.T) {
-			key1 := yk.GetAESKey()
-			key2 := yk.GetAESKey()
-			assert.Equal(t, aesKey, key1)
-			assert.Equal(t, key1, key2)
-
-			// Modify returned key shouldn't affect original
-			key1[0] = 0xFF
-			key2 = yk.GetAESKey()
-			assert.NotEqual(t, key1[0], key2[0])
+		t.Run("AESKey", func(t *testing.T) {
+			assert.Equal(t, aesKey, yk.AESKey)
 		})
 
-		t.Run("GetPrivateID returns copy", func(t *testing.T) {
-			id1 := yk.GetPrivateID()
-			id2 := yk.GetPrivateID()
-			assert.Equal(t, privateID, id1)
-			assert.Equal(t, id1, id2)
-
-			// Modify returned ID shouldn't affect original
-			id1[0] = 0xFF
-			id2 = yk.GetPrivateID()
-			assert.NotEqual(t, id1[0], id2[0])
+		t.Run("PrivateID", func(t *testing.T) {
+			assert.Equal(t, privateID, yk.PrivateID)
 		})
 	})
 
@@ -445,33 +429,12 @@ func TestSoftwareYubikey(t *testing.T) {
 			assert.NotEqual(t, aesKey[0], yk.AESKey[0])
 		})
 
-		t.Run("memory safety", func(t *testing.T) {
+		t.Run("generated key material lengths", func(t *testing.T) {
 			yk, err := NewSoftwareYubikey(nil)
 			assert.NoError(t, err)
 
-			// Test GetAESKey returns copies
-			key1 := yk.GetAESKey()
-			key2 := yk.GetAESKey()
-			assert.Equal(t, key1, key2)
-
-			// Modify one copy shouldn't affect original
-			originalKeyByte := key1[0]
-			key1[0] = 0xFF
-			key2 = yk.GetAESKey()
-			assert.Equal(t, originalKeyByte, key2[0]) // Should get original value back
-			assert.NotEqual(t, key1[0], key2[0])
-
-			// Test GetPrivateID returns copies
-			id1 := yk.GetPrivateID()
-			id2 := yk.GetPrivateID()
-			assert.Equal(t, id1, id2)
-
-			// Modify one copy shouldn't affect original
-			originalIDByte := id1[0]
-			id1[0] = 0xFF
-			id2 = yk.GetPrivateID()
-			assert.Equal(t, originalIDByte, id2[0]) // Should get original value back
-			assert.NotEqual(t, id1[0], id2[0])
+			assert.Len(t, yk.AESKey, 16)
+			assert.Len(t, yk.PrivateID, 6)
 		})
 	})
 }

@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -125,7 +126,7 @@ func TestYubikeyOTPVerifyHandlerWithMockYubico(t *testing.T) {
 			yubico: yAuth,
 		}
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/yubikey/otp/verify?username=testuser&otp="+validOTP, nil)
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/yubikey/otp/verify?username=testuser&otp=%s", validOTP), nil)
 		w := httptest.NewRecorder()
 
 		srv.yubikeyOTPVerify(w, req)

@@ -12,25 +12,70 @@ import (
 	"github.com/vitalvas/oneauth/internal/yubico"
 )
 
-func TestHealthEndpoint(t *testing.T) {
-	t.Run("ReturnsOK", func(t *testing.T) {
-		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-		})
+func newTestServer(t *testing.T) *Server {
+	t.Helper()
 
+	yAuth, err := yubico.NewYubiAuth(1, "c2VjcmV0")
+	require.NoError(t, err)
+
+	return &Server{
+		config: &Config{
+			Yubico: ConfigYubico{ClientID: 1, ClientSecret: "c2VjcmV0"},
+		},
+		yubico: yAuth,
+	}
+}
+
+func TestNewRouter(t *testing.T) {
+	router := newTestServer(t).newRouter()
+
+	t.Run("Health", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/health", nil)
 		w := httptest.NewRecorder()
-
-		handler.ServeHTTP(w, req)
+		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
 		var resp map[string]string
-		err := json.NewDecoder(w.Body).Decode(&resp)
-		require.NoError(t, err)
+		require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 		assert.Equal(t, "ok", resp["status"])
+	})
+
+	t.Run("SecurityTxt", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/.well-known/security.txt", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Header().Get("Content-Type"), "text/plain")
+		assert.Contains(t, w.Body.String(), "Contact:")
+	})
+
+	t.Run("OneAuthMetadata", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/.well-known/oneauth-server.json", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+	})
+
+	t.Run("OTPVerifyRouteRegistered", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/yubikey/otp/verify", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Route exists: it must not return 404.
+		assert.NotEqual(t, http.StatusNotFound, w.Code)
+	})
+
+	t.Run("UnknownPath", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/does/not/exist", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 }
 

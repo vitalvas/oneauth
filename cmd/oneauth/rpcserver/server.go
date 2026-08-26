@@ -37,8 +37,8 @@ func (s *RPCServer) Shutdown() {
 	}
 }
 
-// GetServer returns the HTTP server instance (for testing)
-func (s *RPCServer) GetServer() *http.Server {
+// Server returns the HTTP server instance (for testing)
+func (s *RPCServer) Server() *http.Server {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.server

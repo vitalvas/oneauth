@@ -20,6 +20,10 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 		s.yubico = yAuth
 	}
 
+	return http.ListenAndServe(":8080", s.newRouter())
+}
+
+func (s *Server) newRouter() *mux.Router {
 	r := mux.NewRouter()
 
 	// Health check endpoint
@@ -37,5 +41,5 @@ func (s *Server) runHTTPServer(_ *cli.Context) error {
 	v1 := r.PathPrefix("/api/v1").Subrouter()
 	v1.HandleFunc("/yubikey/otp/verify", s.yubikeyOTPVerify).Methods(http.MethodGet, http.MethodPost)
 
-	return http.ListenAndServe(":8080", r)
+	return r
 }

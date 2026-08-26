@@ -128,7 +128,7 @@ func TestListenAndServeHTTPHandling(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		// Verify server was created
-		server := rpcServer.GetServer()
+		server := rpcServer.Server()
 		assert.NotNil(t, server)
 		assert.NotNil(t, server.Handler)
 
@@ -168,7 +168,7 @@ func TestListenAndServeTimeout(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		// Verify timeout is set
-		server := rpcServer.GetServer()
+		server := rpcServer.Server()
 		assert.Equal(t, 2*time.Second, server.ReadHeaderTimeout)
 
 		// Shutdown the server
@@ -307,7 +307,7 @@ func TestListenAndServeIntegration(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 
 		// Verify everything is set up
-		server := rpcServer.GetServer()
+		server := rpcServer.Server()
 		assert.NotNil(t, server)
 		assert.NotNil(t, rpcServer.SSHAgent)
 		assert.NotNil(t, rpcServer.log)

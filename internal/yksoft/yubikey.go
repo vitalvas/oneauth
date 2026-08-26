@@ -153,22 +153,3 @@ func (yk *SoftwareYubikey) IncrementCounter() {
 	yk.Counter++
 	yk.SessionUse = 0
 }
-
-// GetKeyID returns the public key identifier
-func (yk *SoftwareYubikey) GetKeyID() string {
-	return yk.KeyID
-}
-
-// GetAESKey returns a copy of the AES key (for KSM storage)
-func (yk *SoftwareYubikey) GetAESKey() []byte {
-	key := make([]byte, 16)
-	copy(key, yk.AESKey)
-	return key
-}
-
-// GetPrivateID returns a copy of the private identifier
-func (yk *SoftwareYubikey) GetPrivateID() []byte {
-	privateID := make([]byte, 6)
-	copy(privateID, yk.PrivateID)
-	return privateID
-}

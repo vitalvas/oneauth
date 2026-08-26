@@ -23,7 +23,7 @@ func TestNew(t *testing.T) {
 		assert.NotNil(t, rpcServer)
 		assert.Equal(t, sshAgent, rpcServer.SSHAgent)
 		assert.Equal(t, log, rpcServer.log)
-		assert.Nil(t, rpcServer.GetServer())
+		assert.Nil(t, rpcServer.Server())
 	})
 }
 
@@ -37,7 +37,7 @@ func TestRPCServerType(t *testing.T) {
 
 		// Verify fields exist
 		assert.NotNil(t, &rpcServer.SSHAgent)
-		assert.NotNil(t, rpcServer.GetServer)
+		assert.NotNil(t, rpcServer.Server)
 		assert.NotNil(t, &rpcServer.log)
 	})
 }
@@ -54,7 +54,7 @@ func TestRPCServerFields(t *testing.T) {
 		assert.Equal(t, log, rpcServer.log)
 
 		// Server should initially be nil
-		assert.Nil(t, rpcServer.GetServer())
+		assert.Nil(t, rpcServer.Server())
 	})
 }
 
@@ -104,7 +104,7 @@ func TestRPCServerConstruction(t *testing.T) {
 		// Verify all parameters are set
 		assert.NotNil(t, rpcServer.SSHAgent)
 		assert.NotNil(t, rpcServer.log)
-		assert.Nil(t, rpcServer.GetServer())
+		assert.Nil(t, rpcServer.Server())
 	})
 
 	t.Run("WithNilParameters", func(t *testing.T) {

@@ -121,7 +121,7 @@ func TestCheckVersionFunc(t *testing.T) {
 		}))
 		defer server.Close()
 
-		manifest, err := CheckVersion("testapp", server.URL+"/")
+		manifest, err := CheckVersion("testapp", fmt.Sprintf("%s/", server.URL))
 		// This will fail because server.URL uses http not https
 		assert.Error(t, err)
 		assert.Nil(t, manifest)

@@ -1,155 +1,67 @@
 package commands
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 	"github.com/vitalvas/oneauth/internal/buildinfo"
 )
 
-func TestExecuteAppConfiguration(t *testing.T) {
-	// Since Execute() calls log.Fatal when run as root, we can't test it directly
-	// But we can test the app configuration logic by extracting it
+func TestNewApp(t *testing.T) {
+	app := newApp("/mock/config/path")
 
-	t.Run("AppMetadata", func(t *testing.T) {
-		// Test app metadata values
-		assert.Equal(t, "OneAuth is a CLI tool to use unified authentication and authorization", getAppUsage())
-		assert.Equal(t, "Details: https://oneauth.vitalvas.dev", getAppDescription())
-		assert.Equal(t, "oneauth", getAppName())
-		assert.Equal(t, buildinfo.Version, getAppVersion())
+	t.Run("Metadata", func(t *testing.T) {
+		assert.Equal(t, "oneauth", app.Name)
+		assert.Equal(t, "OneAuth is a CLI tool to use unified authentication and authorization", app.Usage)
+		assert.Equal(t, "Details: https://oneauth.vitalvas.dev", app.Description)
+		assert.Equal(t, buildinfo.Version, app.Version)
 	})
 
 	t.Run("ConfigFlag", func(t *testing.T) {
-		// Test that config flag is properly configured
-		flags := getAppFlags()
-		assert.Len(t, flags, 1)
+		require.Len(t, app.Flags, 1)
 
-		configFlag, ok := flags[0].(*cli.PathFlag)
-		assert.True(t, ok)
+		configFlag, ok := app.Flags[0].(*cli.PathFlag)
+		require.True(t, ok)
 		assert.Equal(t, "config", configFlag.Name)
 		assert.Equal(t, "path to config file", configFlag.Usage)
-		assert.NotEmpty(t, configFlag.Value)
+		assert.Equal(t, "/mock/config/path", configFlag.Value)
 	})
 
 	t.Run("Commands", func(t *testing.T) {
-		// Test that all expected commands are present
-		commands := getAppCommands()
-		assert.Len(t, commands, 6)
+		require.Len(t, app.Commands, 6)
 
-		// Check that all command variables are not nil
-		assert.NotNil(t, agentCmd)
-		assert.NotNil(t, infoCmd)
-		assert.NotNil(t, setupCmd)
-		assert.NotNil(t, serviceCmd)
-		assert.NotNil(t, yubikeyCmd)
-		assert.NotNil(t, updateCmd)
-	})
-}
-
-func TestExecuteRootCheck(t *testing.T) {
-	t.Run("RootUserCheck", func(t *testing.T) {
-		// We can't directly test the root check without actually running as root
-		// But we can test that the check function exists and works
-
-		// This test verifies that the root check logic is in place
-		// The actual root check is handled by internal/tools.IsRoot()
-
-		// Test that os.Args is accessible (used by Execute)
-		assert.NotNil(t, os.Args)
-		assert.GreaterOrEqual(t, len(os.Args), 1)
-	})
-}
-
-func TestExecutePathHandling(t *testing.T) {
-	t.Run("ConfigPathGeneration", func(t *testing.T) {
-		// Test that config path can be generated without error
-		// This is testing the paths.Config() call in Execute()
-
-		// The actual path generation is tested in paths package
-		// Here we just verify it's used correctly
-		flags := getAppFlags()
-		configFlag := flags[0].(*cli.PathFlag)
-		assert.NotEmpty(t, configFlag.Value)
-	})
-}
-
-// Helper functions to extract app configuration for testing
-func getAppUsage() string {
-	return "OneAuth is a CLI tool to use unified authentication and authorization"
-}
-
-func getAppDescription() string {
-	return "Details: https://oneauth.vitalvas.dev"
-}
-
-func getAppName() string {
-	return "oneauth"
-}
-
-func getAppVersion() string {
-	return buildinfo.Version
-}
-
-func getAppFlags() []cli.Flag {
-	// This simulates the flags creation in Execute()
-	return []cli.Flag{
-		&cli.PathFlag{
-			Name:  "config",
-			Usage: "path to config file",
-			Value: "/mock/config/path", // Mock value for testing
-		},
-	}
-}
-
-func getAppCommands() []*cli.Command {
-	// This simulates the commands array in Execute()
-	return []*cli.Command{
-		agentCmd,
-		infoCmd,
-		setupCmd,
-		serviceCmd,
-		yubikeyCmd,
-		updateCmd,
-	}
-}
-
-func TestExecuteCommandsInitialization(t *testing.T) {
-	t.Run("CommandsAreInitialized", func(t *testing.T) {
-		// Test that all command variables are initialized
-		commands := []interface{}{
-			agentCmd,
-			infoCmd,
-			setupCmd,
-			serviceCmd,
-			yubikeyCmd,
-			updateCmd,
+		names := make([]string, 0, len(app.Commands))
+		for _, cmd := range app.Commands {
+			names = append(names, cmd.Name)
 		}
-
-		for i, cmd := range commands {
-			assert.NotNil(t, cmd, "Command %d should not be nil", i)
-		}
+		assert.Contains(t, names, "agent")
+		assert.Contains(t, names, "info")
+		assert.Contains(t, names, "setup")
+		assert.Contains(t, names, "service")
+		assert.Contains(t, names, "yubikey")
+		assert.Contains(t, names, "update")
 	})
 }
 
-func TestExecuteCliIntegration(t *testing.T) {
-	t.Run("CliAppCreation", func(t *testing.T) {
-		// Test that cli.App can be created with our configuration
-		app := &cli.App{
-			Name:        getAppName(),
-			Usage:       getAppUsage(),
-			Description: getAppDescription(),
-			Version:     getAppVersion(),
-			Flags:       getAppFlags(),
-			Commands:    getAppCommands(),
-		}
+func TestNewAppRun(t *testing.T) {
+	t.Run("Help", func(t *testing.T) {
+		app := newApp("/mock/config/path")
+		err := app.Run([]string{"oneauth", "--help"})
+		assert.NoError(t, err)
+	})
 
-		assert.NotNil(t, app)
-		assert.Equal(t, "oneauth", app.Name)
-		assert.Equal(t, buildinfo.Version, app.Version)
-		assert.Len(t, app.Flags, 1)
-		assert.Len(t, app.Commands, 6)
+	t.Run("UnknownFlag", func(t *testing.T) {
+		app := newApp("/mock/config/path")
+		err := app.Run([]string{"oneauth", "--does-not-exist"})
+		assert.Error(t, err)
+	})
+
+	t.Run("ConfigFlagPassthrough", func(t *testing.T) {
+		app := newApp("/mock/config/path")
+		err := app.Run([]string{"oneauth", "--config", "/tmp/custom.yaml", "--help"})
+		assert.NoError(t, err)
 	})
 }
 
@@ -157,8 +69,7 @@ func TestCommandMetadata(t *testing.T) {
 	t.Run("ServiceCmd", func(t *testing.T) {
 		assert.Equal(t, "service", serviceCmd.Name)
 		assert.Equal(t, "Service management", serviceCmd.Usage)
-		assert.NotEmpty(t, serviceCmd.Subcommands)
-		assert.Len(t, serviceCmd.Subcommands, 3)
+		require.Len(t, serviceCmd.Subcommands, 3)
 
 		subNames := make([]string, 0, len(serviceCmd.Subcommands))
 		for _, sub := range serviceCmd.Subcommands {
@@ -228,7 +139,7 @@ func TestInfoKeyStruct(t *testing.T) {
 			},
 		}
 
-		assert.Len(t, data.Keys, 2)
+		require.Len(t, data.Keys, 2)
 		assert.Equal(t, "key1", data.Keys[0].Name)
 		assert.Equal(t, "key2", data.Keys[1].Name)
 	})
@@ -238,23 +149,5 @@ func TestInfoTemplate(t *testing.T) {
 	t.Run("TemplateValid", func(t *testing.T) {
 		assert.NotEmpty(t, infoTmpl)
 		assert.Contains(t, infoTmpl, "Keys")
-	})
-}
-
-func TestExecuteConstants(t *testing.T) {
-	t.Run("StringConstants", func(t *testing.T) {
-		// Test that string constants are not empty
-		assert.NotEmpty(t, getAppName())
-		assert.NotEmpty(t, getAppUsage())
-		assert.NotEmpty(t, getAppDescription())
-		// Version might be empty in test environment
-		assert.NotNil(t, getAppVersion())
-	})
-
-	t.Run("URLFormat", func(t *testing.T) {
-		// Test that the URL in description is properly formatted
-		description := getAppDescription()
-		assert.Contains(t, description, "https://")
-		assert.Contains(t, description, "oneauth.vitalvas.dev")
 	})
 }

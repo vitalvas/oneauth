@@ -954,7 +954,7 @@ func TestHandleRESTDecrypt_SuccessWithYksoft(t *testing.T) {
 	assert.NoError(t, err)
 
 	aesKeyB64 := base64.RawURLEncoding.EncodeToString(aesKey)
-	err = server.StoreKey(yk.GetKeyID(), aesKeyB64, "Test key")
+	err = server.StoreKey(yk.KeyID, aesKeyB64, "Test key")
 	assert.NoError(t, err)
 
 	otpResult, err := yk.GenerateOTP()

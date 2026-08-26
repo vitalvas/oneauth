@@ -12,9 +12,12 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const defaultListenAddr = ":2022"
+
 type Server struct {
-	serverURL *url.URL
-	sshConfig *ssh.ServerConfig
+	serverURL  *url.URL
+	sshConfig  *ssh.ServerConfig
+	listenAddr string
 }
 
 func Execute() {
@@ -54,42 +57,59 @@ func (s *Server) loadConfig(c *cli.Context) error {
 
 func (s *Server) runServer(srv *Server) cli.ActionFunc {
 	return func(_ *cli.Context) error {
-		srv.sshConfig = &ssh.ServerConfig{
-			ServerVersion:     "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
-			PasswordCallback:  srv.sshPasswordCallback,
-			PublicKeyCallback: srv.sshPublicKeyCallback,
-
-			BannerCallback: func(conn ssh.ConnMetadata) string {
-				remote, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
-				return fmt.Sprintf("Welcome %s from %s!\n", conn.User(), remote)
-			},
+		if err := srv.setupSSHConfig(); err != nil {
+			return err
 		}
-
-		private, err := generatePrivateHostKey()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		srv.sshConfig.AddHostKey(private)
 
 		return srv.ListenAndServe()
 	}
 }
 
+func (s *Server) setupSSHConfig() error {
+	s.sshConfig = &ssh.ServerConfig{
+		ServerVersion:     "SSH-2.0-OneAuth (+https://oneauth.vitalvas.dev)",
+		PasswordCallback:  s.sshPasswordCallback,
+		PublicKeyCallback: s.sshPublicKeyCallback,
+
+		BannerCallback: func(conn ssh.ConnMetadata) string {
+			remote, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+			return fmt.Sprintf("Welcome %s from %s!\n", conn.User(), remote)
+		},
+	}
+
+	private, err := generatePrivateHostKey()
+	if err != nil {
+		return err
+	}
+
+	s.sshConfig.AddHostKey(private)
+
+	return nil
+}
+
 func (s *Server) ListenAndServe() error {
-	listener, err := net.Listen("tcp", ":2022")
+	addr := s.listenAddr
+	if addr == "" {
+		addr = defaultListenAddr
+	}
+
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
 
 	defer listener.Close()
 
-	log.Printf("listening on %s", ":2022")
+	log.Printf("listening on %s", addr)
+
+	return s.serve(listener)
+}
+
+func (s *Server) serve(listener net.Listener) error {
 	for {
 		tcpConn, err := listener.Accept()
 		if err != nil {
-			log.Println("failed to accept connection: ", err)
-			continue
+			return err
 		}
 
 		go s.handleConn(tcpConn)

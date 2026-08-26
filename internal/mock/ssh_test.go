@@ -71,7 +71,7 @@ func TestChannelConn(t *testing.T) {
 		conn := NewChannelConn()
 		assert.NotNil(t, conn)
 		assert.False(t, conn.IsClosed())
-		assert.Empty(t, conn.GetWrittenData())
+		assert.Empty(t, conn.WrittenData())
 	})
 
 	t.Run("Write", func(t *testing.T) {
@@ -81,7 +81,7 @@ func TestChannelConn(t *testing.T) {
 		n, err := conn.Write(data)
 		assert.NoError(t, err)
 		assert.Equal(t, len(data), n)
-		assert.Equal(t, data, conn.GetWrittenData())
+		assert.Equal(t, data, conn.WrittenData())
 	})
 
 	t.Run("Read", func(t *testing.T) {

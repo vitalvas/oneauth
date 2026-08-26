@@ -1,6 +1,7 @@
 package yubikey
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func TestValidatePin_AllBlockedPINs(t *testing.T) {
 		"159753",
 	}
 	for _, pin := range blockedPins {
-		t.Run("blocked_"+pin, func(t *testing.T) {
+		t.Run(fmt.Sprintf("blocked_%s", pin), func(t *testing.T) {
 			assert.False(t, ValidatePin(pin), "PIN %s should be blocked", pin)
 		})
 	}
@@ -82,7 +83,7 @@ func TestValidatePuk_AllBlockedPUKs(t *testing.T) {
 		"12345678", "11111111",
 	}
 	for _, puk := range blockedPuks {
-		t.Run("blocked_"+puk, func(t *testing.T) {
+		t.Run(fmt.Sprintf("blocked_%s", puk), func(t *testing.T) {
 			assert.False(t, ValidatePuk(puk), "PUK %s should be blocked", puk)
 		})
 	}

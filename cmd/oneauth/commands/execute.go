@@ -20,7 +20,13 @@ func Execute() {
 		log.Fatal(err)
 	}
 
-	app := &cli.App{
+	if err := newApp(configPath).Run(os.Args); err != nil {
+		log.Println(err)
+	}
+}
+
+func newApp(configPath string) *cli.App {
+	return &cli.App{
 		Name:        "oneauth",
 		Usage:       "OneAuth is a CLI tool to use unified authentication and authorization",
 		Description: "Details: https://oneauth.vitalvas.dev",
@@ -40,9 +46,5 @@ func Execute() {
 			yubikeyCmd,
 			updateCmd,
 		},
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		log.Println(err)
 	}
 }

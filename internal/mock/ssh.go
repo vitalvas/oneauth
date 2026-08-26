@@ -154,8 +154,8 @@ func (m *ChannelConn) Stderr() io.ReadWriter {
 	return m
 }
 
-// GetWrittenData returns all data written to the connection
-func (m *ChannelConn) GetWrittenData() []byte {
+// WrittenData returns all data written to the connection
+func (m *ChannelConn) WrittenData() []byte {
 	return m.writeData
 }
 
